@@ -23,7 +23,13 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
+using Rhino.Geometry;
+
 using Grasshopper.Kernel;
+using System.IO;
+using System.Reflection;
+
+using FrdReader;
 
 namespace CalculiX.GH.Components
 {
@@ -50,12 +56,20 @@ namespace CalculiX.GH.Components
             string frdPath = "";
             DA.GetData("Results path", ref frdPath);
 
-            if (string.IsNullOrEmpty(frdPath) || System.IO.File.Exists(frdPath)) { return; }
+            if (string.IsNullOrEmpty(frdPath) || !System.IO.File.Exists(frdPath)) 
+            {
+                var executingDirectory = Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location);
+                var workingDirectory = Path.Combine(executingDirectory, "Temp");
 
-            // Do something
+                AddRuntimeMessage(GH_RuntimeMessageLevel.Warning, $"Results file cannot be found. Check if it exists. Could be in '{workingDirectory}'...");
+                return; 
+            }
 
+            // Do something with the results
+            FrdResults results = new FrdResults();
+            results.Read(frdPath);
 
-            DA.SetData("Results", null);
+            DA.SetData("Results", new GH_FrdResults(results));
         }
 
         protected override System.Drawing.Bitmap Icon
@@ -68,7 +82,7 @@ namespace CalculiX.GH.Components
 
         public override Guid ComponentGuid
         {
-            get { return new Guid("e2117fba-5c1d-4312-80b1-2454a81972d7"); }
+            get { return new Guid("9f42fa9f-6b89-4281-b087-0073991b54aa"); }
         }
     }
 }

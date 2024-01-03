@@ -14,7 +14,7 @@
     <AssemblyName>CalculiX.GH</AssemblyName>
     <TargetFrameworkVersion>v4.8</TargetFrameworkVersion>
     <FileAlignment>512</FileAlignment>
-    <Deterministic>true</Deterministic>
+    <Deterministic>false</Deterministic>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
     <DebugSymbols>true</DebugSymbols>
@@ -52,8 +52,18 @@
     <ErrorReport>prompt</ErrorReport>
   </PropertyGroup>
   <ItemGroup>
+    <Reference Include="FrdReader">
+      <HintPath>..\..\dep\FrdReader.dll</HintPath>
+    </Reference>
+    <Reference Include="GmshCommon">
+      <HintPath>..\..\dep\GmshCommon.dll</HintPath>
+    </Reference>
+    <Reference Include="GmshRhino">
+      <HintPath>..\..\dep\GmshRhino.dll</HintPath>
+    </Reference>
     <Reference Include="System" />
     <Reference Include="System.Core" />
+    <Reference Include="System.Drawing" />
     <Reference Include="System.Xml.Linq" />
     <Reference Include="System.Data.DataSetExtensions" />
     <Reference Include="Microsoft.CSharp" />
@@ -62,13 +72,25 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="CompareIntArray.cs" />
+    <Compile Include="Components\Cmpt_Stresses.cs" />
+    <Compile Include="Components\Cmpt_GetNodesAndElements.cs" />
+    <Compile Include="Components\Cmpt_ElementMeshes.cs" />
+    <Compile Include="Components\Cmpt_VisualizationFaces.cs" />
+    <Compile Include="Components\Cmpt_Deformations.cs" />
+    <Compile Include="Components\Cmpt_Run2D.cs" />
     <Compile Include="Components\Cmpt_LoadResults.cs" />
-    <Compile Include="Utility.cs" />
+    <Compile Include="Api.cs" />
+    <Compile Include="HashBucket.cs" />
+    <Compile Include="Mesh.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
+    <Compile Include="Goo\GH_FrdResults.cs" />
+    <Compile Include="Solver.cs" />
+    <Compile Include="Vector.cs" />
   </ItemGroup>
   <ItemGroup>
     <PackageReference Include="Grasshopper">
-      <Version>8.2.23346.13001</Version>
+      <Version>7.35.23346.11001</Version>
     </PackageReference>
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
