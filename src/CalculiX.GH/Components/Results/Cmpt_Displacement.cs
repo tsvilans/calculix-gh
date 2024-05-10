@@ -36,79 +36,67 @@ using Grasshopper.Kernel.Types;
 
 namespace CalculiX.GH.Components
 {
-    public class Cmpt_Deformations: GH_Component
+    public class Cmpt_Displacement: GH_Component
     {
-        public Cmpt_Deformations()
-            : base ("Deform", "Def", "Get model deformations.", Api.ComponentCategory, "Results")
+        public Cmpt_Displacement()
+            : base ("Displacement", "Disp", "Get model displacements.", Api.ComponentCategory, "Results")
         { 
         }
+
+        public override GH_Exposure Exposure => GH_Exposure.secondary;
+
 
         protected override void RegisterInputParams(GH_Component.GH_InputParamManager pManager)
         {
             pManager.AddGenericParameter("Results", "R", "FrdResults object.", GH_ParamAccess.item);
-            pManager.AddNumberParameter("Factor", "F", "Deformation multiplication factor.", GH_ParamAccess.item, 1.0);
-            pManager.AddIntegerParameter("Faces", "F", "Visualization faces as a DataTree.", GH_ParamAccess.tree);
         }
 
         protected override void RegisterOutputParams(GH_Component.GH_OutputParamManager pManager)
         {
-            pManager.AddMeshParameter("Mesh", "M", "Deformed mesh.", GH_ParamAccess.item);
-            pManager.AddVectorParameter("Vectors", "V", "Deformation vectors.", GH_ParamAccess.list);
+            pManager.AddNumberParameter("D1", "D1", "Displacement in the X-direction.", GH_ParamAccess.list);
+            pManager.AddNumberParameter("D2", "D2", "Displacement in the Y-direction.", GH_ParamAccess.list);
+            pManager.AddNumberParameter("D3", "D3", "Displacement in the Z-direction.", GH_ParamAccess.list);
         }
 
         protected override void SolveInstance(IGH_DataAccess DA)
         {
             FrdResults results = null;
-            double displacementFactor = 1.0;
-            GH_Structure<GH_Integer> faces;
+            //var nodeIds = new List<int>();
 
             if (!DA.GetData<FrdResults>("Results", ref results))
             {
                 AddRuntimeMessage(GH_RuntimeMessageLevel.Warning, "Failed to parse results.");
                 return;
             }
-            DA.GetData("Factor", ref displacementFactor);
-            DA.GetDataTree(2, out faces);
 
-            var nodeMap = new Dictionary<int, Point3d>();
-            var distortedNodeMap = new Dictionary<int, Point3d>();
-
-
-            for (int i = 0; i < results.Nodes.Count; ++i)
+            if (!results.Fields.ContainsKey("DISP"))
             {
-                var node = results.Nodes[i];
-                nodeMap[node.Id] = new Point3d(node.X, node.Y, node.Z);
+                AddRuntimeMessage(GH_RuntimeMessageLevel.Warning, "No displacement values found.");
+                return;
             }
 
-            Vector3d[] displacementVectors = null;
+            float[] d1, d2, d3, all;
 
-            if (results.Fields.ContainsKey("DISP"))
-            {
-                displacementVectors = Utility.GetVectors(results, "DISP", "D1", "D2", "D3");
+            results.Fields["DISP"].TryGetValue("D1", out d1);
+            results.Fields["DISP"].TryGetValue("D2", out d2);
+            results.Fields["DISP"].TryGetValue("D3", out d3);
 
-                for (int i = 0; i < results.Nodes.Count; ++i)
-                {
-                    distortedNodeMap[results.Nodes[i].Id] = nodeMap[results.Nodes[i].Id] + displacementVectors[i] * displacementFactor;
-                }
-            }
-
-            var mesh = Utility.CreateShellMesh(distortedNodeMap, faces);
-
-            DA.SetData("Mesh", mesh);
-            DA.SetDataList("Vectors", displacementVectors);
+            DA.SetDataList("D1", d1.Select(x => new GH_Number(x)));
+            DA.SetDataList("D2", d2.Select(x => new GH_Number(x)));
+            DA.SetDataList("D3", d3.Select(x => new GH_Number(x)));
         }
 
         protected override System.Drawing.Bitmap Icon
         {
             get
             {
-                return null;
+                return Properties.Resources.Displacement;
             }
         }
 
         public override Guid ComponentGuid
         {
-            get { return new Guid("e2117fba-5c1d-4312-80b1-2454a81972d7"); }
+            get { return new Guid("d99bb7b7-424d-490a-8597-a104dfc15ad5"); }
         }
     }
 }

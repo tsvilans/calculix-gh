@@ -36,62 +36,62 @@ using Grasshopper.Kernel.Types;
 
 namespace CalculiX.GH.Components
 {
-    public class Cmpt_GetNodesAndElements : GH_Component
+    public class Cmpt_MeshCreases: GH_Component
     {
-        public Cmpt_GetNodesAndElements()
-            : base ("Nodes Elements", "NE", "Get all nodes and elements in model.", Api.ComponentCategory, "Results")
+        public Cmpt_MeshCreases()
+            : base ("Mesh Creases", "MCr", "Get creases (sharp edges) of a mesh.", Api.ComponentCategory, "Model")
         { 
         }
         public override GH_Exposure Exposure => GH_Exposure.tertiary;
 
+        Line[] creases = null;
+
         protected override void RegisterInputParams(GH_Component.GH_InputParamManager pManager)
         {
-            pManager.AddGenericParameter("Results", "R", "FrdResults object.", GH_ParamAccess.item);
+            pManager.AddMeshParameter("Mesh", "M", "Mesh.", GH_ParamAccess.item);
+            pManager.AddNumberParameter("Threshold", "T", "Threshold dihedral angle between adjacent faces to qualify as crease.", GH_ParamAccess.item, 0.7857);
         }
 
         protected override void RegisterOutputParams(GH_Component.GH_OutputParamManager pManager)
         {
-            pManager.AddPointParameter("Nodes", "N", "Nodes as tree. Tree path corresponds to node ID.", GH_ParamAccess.tree);
-            pManager.AddIntegerParameter("Elements", "E", "Elements as tree. Tree path corresponds to element ID.", GH_ParamAccess.tree);
+            pManager.AddLineParameter("Creases", "C", "Creased edges as lines.", GH_ParamAccess.list);
         }
 
         protected override void SolveInstance(IGH_DataAccess DA)
         {
-            FrdResults results = null;
-            DataTree<GH_Point> outputNodes = new DataTree<GH_Point>();
-            DataTree<int> outputElements = new DataTree<int>();
+            Mesh mesh = null;
+            double threshold = 0.7857;
 
-            if (!DA.GetData<FrdResults>("Results", ref results))
+            if (!DA.GetData("Mesh", ref mesh) || mesh == null)
             {
-                AddRuntimeMessage(GH_RuntimeMessageLevel.Warning, "Failed to parse results.");
+                AddRuntimeMessage(GH_RuntimeMessageLevel.Warning, "Failed to get mesh.");
                 return;
             }
 
-            foreach (var node in  results.Nodes) 
-            {
-                outputNodes.Add(new GH_Point(new Point3d(node.X, node.Y, node.Z)), new GH_Path(node.Id));
-            }
+            DA.GetData("Threshold", ref threshold);
 
-            foreach (var element in results.Elements)
-            {
-                outputElements.AddRange(element.Indices, new GH_Path(element.Id));
-            }
+            creases = mesh.ExtractCreases(threshold).ToArray();
 
-            DA.SetDataTree(0, outputNodes);
-            DA.SetDataTree(1, outputElements);
+            DA.SetDataList("Creases", creases.Select(x => new GH_Line(x)));
+        }
+
+        public override void DrawViewportWires(IGH_PreviewArgs args)
+        {
+            if (creases != null)
+                args.Display.DrawLines(creases, System.Drawing.Color.White, 1);
         }
 
         protected override System.Drawing.Bitmap Icon
         {
             get
             {
-                return Properties.Resources.Default_24x24;
+                return Properties.Resources.MeshCrease;
             }
         }
 
         public override Guid ComponentGuid
         {
-            get { return new Guid("ad1f078f-6f09-4129-9092-6893e4f6c1af"); }
+            get { return new Guid("DDB1FB67-9B90-4D33-8094-D9C744E75031"); }
         }
     }
 }

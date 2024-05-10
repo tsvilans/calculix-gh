@@ -32,6 +32,7 @@ using System.Reflection;
 using FrdReader;
 using Grasshopper;
 using Grasshopper.Kernel.Data;
+using Grasshopper.Kernel.Types;
 
 namespace CalculiX.GH.Components
 {
@@ -41,6 +42,7 @@ namespace CalculiX.GH.Components
             : base ("Viz Faces", "VizF", "Get the visible faces of all elements for constructing a visualization mesh.", Api.ComponentCategory, "Results")
         { 
         }
+        public override GH_Exposure Exposure => GH_Exposure.tertiary;
 
         protected override void RegisterInputParams(GH_Component.GH_InputParamManager pManager)
         {
@@ -49,6 +51,7 @@ namespace CalculiX.GH.Components
 
         protected override void RegisterOutputParams(GH_Component.GH_OutputParamManager pManager)
         {
+            pManager.AddIntegerParameter("Nodes", "N", "Indices of active visualization nodes.", GH_ParamAccess.list);
             pManager.AddIntegerParameter("Faces", "F", "Visualization faces as a DataTree.", GH_ParamAccess.tree);
         }
 
@@ -82,6 +85,44 @@ namespace CalculiX.GH.Components
             }
 
             var faces = cellSet.GetUnique();
+
+            // Get visualization nodes
+            var nodeSet = new HashSet<int>();
+            foreach (var face in faces)
+            {
+                foreach(var f in face)
+                {
+                    nodeSet.Add(f);
+                }
+            }
+
+            // Create visualization node list and remap visualization faces
+            var nodeMap = new Dictionary<int, int>();
+            var vizNodes = new List<int>();
+
+            int counter = 0;
+            int index = 0;
+
+            foreach (var node in results.Nodes)
+            {
+                if (nodeSet.Contains(node.Id))
+                {
+                    nodeMap[node.Id] = counter;
+                    vizNodes.Add(index);
+                    counter++;
+                }
+                index++;
+            }
+
+            for(int i = 0; i < faces.Count; ++i)
+            {
+                for (int j = 0; j < faces[i].Length; ++j)
+                {
+                    faces[i][j] = nodeMap[faces[i][j]];
+                }
+            }
+
+            /*
             faces.Sort((f0, f1) =>
             {
                 int xdiff = f0[0].CompareTo(f1[0]);
@@ -94,6 +135,7 @@ namespace CalculiX.GH.Components
                         return f0[2].CompareTo(f1[2]);
                 }
             });
+            */
 
             GH_Path path = new GH_Path(0);
             for(int i = 0; i < faces.Count; ++i)
@@ -103,14 +145,15 @@ namespace CalculiX.GH.Components
             }
 
 
-            DA.SetDataTree(0, outputFaces);
+            DA.SetDataList("Nodes", vizNodes.Select(x => new GH_Integer(x)));
+            DA.SetDataTree(1, outputFaces);
         }
 
         protected override System.Drawing.Bitmap Icon
         {
             get
             {
-                return null;
+                return Properties.Resources.Visualization_24x24;
             }
         }
 

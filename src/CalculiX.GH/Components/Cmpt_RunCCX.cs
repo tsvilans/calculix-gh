@@ -31,35 +31,58 @@ using System.Reflection;
 
 namespace CalculiX.GH.Components
 {
-    public class Cmpt_Run2D: GH_Component
+    public class Cmpt_RunCCX: GH_Component
     {
-        public Cmpt_Run2D()
-            : base ("Run 2D", "R2D", "Run a simulation with 2D elements (beams).", Api.ComponentCategory, "Simulate")
+        public Cmpt_RunCCX()
+            : base ("Run CCX", "CCX", "Run CalculiX with specified model.", Api.ComponentCategory, "CalculiX")
         { 
         }
 
+        string resultsPath = "";
+        string[] simulationOutput = null;
+
         protected override void RegisterInputParams(GH_Component.GH_InputParamManager pManager)
         {
-            pManager.AddTextParameter("Results path", "P", "Filepath of .frd results file.", GH_ParamAccess.item);
+            pManager.AddTextParameter("Input path", "P", "Path to .inp simulation file.", GH_ParamAccess.item);
+            pManager.AddBooleanParameter("Run", "R", "Run simulation.", GH_ParamAccess.item, false);
+            pManager.AddIntegerParameter("Threads", "T", "Number of threads to use (0: maximum available).", GH_ParamAccess.item, 0);
         }
 
         protected override void RegisterOutputParams(GH_Component.GH_OutputParamManager pManager)
         {
-            pManager.AddTextParameter("Results path", "P", "Filepath of .frd results file.", GH_ParamAccess.item);
+            pManager.AddTextParameter("Results path", "P", "Path to .frd simulation results file.", GH_ParamAccess.item);
             pManager.AddTextParameter("Output", "O", "Console output from simulation.", GH_ParamAccess.item);
-
         }
 
         protected override void SolveInstance(IGH_DataAccess DA)
         {
 
-            // Do something
+            var run = false;
+            DA.GetData("Run", ref run);
+            if (!run)
+            {
+                if (!string.IsNullOrEmpty(resultsPath))
+                    DA.SetData("Results path", resultsPath);
+                return;
+            }
 
-            var outputName = "output";
+            var inputPath = "";
+            if (!DA.GetData("Input path", ref inputPath) || string.IsNullOrEmpty(inputPath) || !System.IO.File.Exists(inputPath))
+            {
+                AddRuntimeMessage(GH_RuntimeMessageLevel.Error, $"Input file '{inputPath}' does not exist!");
+                return;
+            }
+
+            var inputName = System.IO.Path.GetFileNameWithoutExtension(inputPath);
+            var inputDirectory = System.IO.Path.GetDirectoryName(inputPath);
+
+            var outputName = Api.DefaultOutputName;
             var executingDirectory = Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location);
             var workingDirectory = Path.Combine(executingDirectory, "Temp");
-            var outputPath = Path.Combine(workingDirectory, outputName + ".inp");
-            var resultsPath = Path.Combine(workingDirectory, outputName + ".frd");
+
+            workingDirectory = inputDirectory;
+
+            resultsPath = Path.Combine(workingDirectory, inputName + ".frd");
 
             var ccxPath = Path.Combine(executingDirectory, "ccx_static.exe");
 
@@ -75,34 +98,47 @@ namespace CalculiX.GH.Components
                 Directory.CreateDirectory(workingDirectory);
             }
 
-            string consoleOutput = "";
+
+            int numThreads = 0;
+
+            DA.GetData("Threads", ref numThreads);
+
+            if (numThreads == 0)
+            {
+                numThreads = Environment.ProcessorCount;
+            }
+
 
             using (System.Diagnostics.Process p = new System.Diagnostics.Process())
             {
                 System.Diagnostics.ProcessStartInfo info = new System.Diagnostics.ProcessStartInfo();
                 info.FileName = ccxPath;
                 info.WorkingDirectory = workingDirectory;
-                info.Arguments = " -i " + outputName;
+                info.Arguments = " -i " + inputName;
                 info.RedirectStandardInput = true;
                 info.RedirectStandardOutput = true;
                 info.UseShellExecute = false;
                 info.CreateNoWindow = true;
+                info.EnvironmentVariables.Add("OMP_NUM_THREADS", numThreads.ToString());
                 info.WindowStyle = System.Diagnostics.ProcessWindowStyle.Hidden;
                 p.StartInfo = info;
                 p.Start();
-                consoleOutput = p.StandardOutput.ReadToEnd();
+                simulationOutput = p.StandardOutput.ReadToEnd().Split(new string[] { System.Environment.NewLine, "\n" }, StringSplitOptions.RemoveEmptyEntries);
 
             }
 
-            DA.SetData("Results path", resultsPath);
-            DA.SetData("Output", consoleOutput);
+            if (!string.IsNullOrEmpty(resultsPath))
+                DA.SetData("Results path", resultsPath);
+
+            if (simulationOutput != null)
+                DA.SetDataList("Output", simulationOutput);
         }
 
         protected override System.Drawing.Bitmap Icon
         {
             get
             {
-                return null;
+                return Properties.Resources.RunCCX_24x24;
             }
         }
 

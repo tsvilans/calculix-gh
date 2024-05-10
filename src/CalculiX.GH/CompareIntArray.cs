@@ -16,7 +16,7 @@ namespace CalculiX.GH
             if (x.Length != y.Length) return false;
 
             // More expensive version that avoids sorting the input arrays
-            var xx = new int[x.Length]; 
+            var xx = new int[x.Length];
             var yy = new int[y.Length];
 
             Array.Copy(x, xx, x.Length);
@@ -34,19 +34,24 @@ namespace CalculiX.GH
 
         public int GetHashCode(int[] x)
         {
+            var xx = new int[x.Length];
+            Array.Copy(x, xx, x.Length);
+            Array.Sort(xx);
+
             unchecked
             {
                 int hc = -1817952719;
-                hc = (-1521134295) * hc + x[0];
-                hc = (-1521134295) * hc + x[1];
-                hc = (-1521134295) * hc + x[2];
+                for (int i = 0; i < xx.Length; ++i)
+                {
+                    hc = (-1521134295) * hc + xx[i];
+                }
                 return hc;
             }
 
             int hash = 23;
-            for (int i = 0; i < x.Length; i++)
+            for (int i = 0; i < xx.Length; i++)
             {
-                hash = hash * 31 + x[i];
+                hash = hash * 31 + xx[i];
             }
             return hash;
         }
@@ -73,9 +78,8 @@ namespace CalculiX.GH
             unchecked
             {
                 int hc = -1817952719;
-                hc = (-1521134295) * hc + x[0];
-                hc = (-1521134295) * hc + x[1];
-                hc = (-1521134295) * hc + x[2];
+                for (int i = 0; i < x.Length; ++i)
+                    hc = (-1521134295) * hc + x[i];
                 return hc;
             }
 

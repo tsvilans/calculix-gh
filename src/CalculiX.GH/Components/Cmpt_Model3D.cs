@@ -16,6 +16,7 @@
  * 
  */
 
+#if DEPRECATED
 
 using System;
 using System.Collections.Generic;
@@ -29,71 +30,69 @@ using Grasshopper.Kernel;
 using System.IO;
 using System.Reflection;
 
-using FrdReader;
-
 namespace CalculiX.GH.Components
 {
-    public class Cmpt_LoadResults: GH_Component
+    public class Cmpt_Model3D: GH_Component
     {
-        public Cmpt_LoadResults()
-            : base ("Load Results", "Res", "Load results from a .frd file.", Api.ComponentCategory, "Results")
+        public Cmpt_Model3D()
+            : base ("Model 3D", "M3D", "Create a FE model with 3D elements (volumes).", Api.ComponentCategory, "Model")
         { 
         }
-
         public override GH_Exposure Exposure => GH_Exposure.primary;
 
+        string resultsPath = "";
+        string[] simulationOutput = null;
 
         protected override void RegisterInputParams(GH_Component.GH_InputParamManager pManager)
         {
-            pManager.AddTextParameter("Results path", "P", "Filepath of .frd results file.", GH_ParamAccess.item);
+            pManager.AddPointParameter("Nodes", "N", "Nodes as points", GH_ParamAccess.tree);
+            pManager.AddIntegerParameter("Elements", "E", "Elements as integer indices.", GH_ParamAccess.tree);
+            pManager.AddPlaneParameter("Element orientations", "EO", "Element orientations as planes.", GH_ParamAccess.tree);
+            pManager.AddGenericParameter("Node sets", "NS", "Node sets.", GH_ParamAccess.list);
+            pManager.AddGenericParameter("Element sets", "ES", "Element sets.", GH_ParamAccess.list);
+
+            var pathParam = pManager.AddTextParameter("Output path", "P", "Optional output path to export the .inp simulation file to.", GH_ParamAccess.item);
+            pManager[pathParam].Optional = true;
+            
         }
 
         protected override void RegisterOutputParams(GH_Component.GH_OutputParamManager pManager)
         {
-            pManager.AddGenericParameter("Results", "R", "The simulation results.", GH_ParamAccess.item);
-
+            pManager.AddTextParameter("Model path", "P", "Path to .inp simulation input file.", GH_ParamAccess.item);
         }
 
         protected override void SolveInstance(IGH_DataAccess DA)
         {
-            string frdPath = "";
-            DA.GetData("Results path", ref frdPath);
+            var inputPath = "";
+            DA.GetData("Output path", ref inputPath);
 
-            if (string.IsNullOrEmpty(frdPath) || !System.IO.File.Exists(frdPath)) 
+            if (string.IsNullOrEmpty(inputPath))
             {
                 var executingDirectory = Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location);
                 var workingDirectory = Path.Combine(executingDirectory, "Temp");
                 //var defaultResultsPath = Path.Combine(workingDirectory, Api.DefaultOutputName + ".frd");
-
-                AddRuntimeMessage(GH_RuntimeMessageLevel.Warning, $"Results file cannot be found. Check if it exists. Could be in '{workingDirectory}'...");
-                /*AddRuntimeMessage(GH_RuntimeMessageLevel.Remark, $"Attempting to use default output file '{defaultResultsPath}'.");
-
-                if (!System.IO.File.Exists(defaultResultsPath))
-                {
-                    AddRuntimeMessage(GH_RuntimeMessageLevel.Warning, "Failed.");
-                    return;
-                }*/
-                return;
+                inputPath = Path.Combine(workingDirectory, Api.DefaultOutputName + ".inp");
             }
 
-            // Do something with the results
-            FrdResults results = new FrdResults();
-            results.Read(frdPath);
+            // TODO: Build model.
 
-            DA.SetData("Results", new GH_FrdResults(results));
+
+
+            DA.SetData("Model path", inputPath);
         }
 
         protected override System.Drawing.Bitmap Icon
         {
             get
             {
-                return Properties.Resources.FrdResults_24x24;
+                return Properties.Resources.Model3D_24x24;
             }
         }
 
         public override Guid ComponentGuid
         {
-            get { return new Guid("9f42fa9f-6b89-4281-b087-0073991b54aa"); }
+            get { return new Guid("65b150fa-d9a5-43ec-9ee2-986862224d37"); }
         }
     }
 }
+#endif

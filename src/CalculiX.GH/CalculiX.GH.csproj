@@ -64,6 +64,7 @@
     <Reference Include="System" />
     <Reference Include="System.Core" />
     <Reference Include="System.Drawing" />
+    <Reference Include="System.Windows.Forms" />
     <Reference Include="System.Xml.Linq" />
     <Reference Include="System.Data.DataSetExtensions" />
     <Reference Include="Microsoft.CSharp" />
@@ -73,15 +74,59 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="CompareIntArray.cs" />
-    <Compile Include="Components\Cmpt_Stresses.cs" />
+    <Compile Include="Components\Cmpt_BeamSection.cs" />
+    <Compile Include="Components\Cmpt_MeshShell.cs" />
+    <Compile Include="Components\Cmpt_MeshCurves.cs" />
+    <Compile Include="Components\Cmpt_Model1D.cs" />
+    <Compile Include="Components\Cmpt_LogKnotOrientations.cs" />
+    <Compile Include="Components\Cmpt_VisualizeResults.cs" />
+    <Compile Include="Components\LoadsBC\Cmpt_TemperatureBC.cs" />
+    <Compile Include="Components\LoadsBC\Cmpt_DisplacementBC.cs" />
+    <Compile Include="Components\LoadsBC\Cmpt_CreateBC.cs" />
+    <Compile Include="Components\LoadsBC\Cmpt_GLoad.cs" />
+    <Compile Include="Components\Cmpt_Curves2Beams.cs" />
+    <Compile Include="Components\LoadsBC\Cmpt_CLoad.cs" />
+    <Compile Include="Components\Results\Cmpt_Displacement.cs" />
+    <Compile Include="Components\Sets\Cmpt_ElementSetCreate.cs" />
+    <Compile Include="Components\Sets\Cmpt_DeSet.cs" />
+    <Compile Include="Components\Sets\Cmpt_NodeSetCreate.cs" />
+    <Compile Include="Components\Sets\Cmpt_NodeSetPoints.cs" />
+    <Compile Include="Components\Sets\Cmpt_NodeSetMesh.cs" />
+    <Compile Include="Components\Cmpt_MinMaxValues.cs" />
+    <Compile Include="Components\Cmpt_MeshBrep.cs" />
+    <Compile Include="Components\Cmpt_Model3DHygro.cs" />
+    <Compile Include="Components\Cmpt_Model3D.cs" />
+    <Compile Include="Components\Cmpt_Model1DOld.cs" />
+    <Compile Include="Components\Cmpt_SimpleLogOrientations.cs" />
+    <Compile Include="Components\Cmpt_MeshCreases.cs" />
+    <Compile Include="Components\Results\Cmpt_Strain.cs" />
+    <Compile Include="Components\Results\Cmpt_Stress.cs" />
     <Compile Include="Components\Cmpt_GetNodesAndElements.cs" />
     <Compile Include="Components\Cmpt_ElementMeshes.cs" />
     <Compile Include="Components\Cmpt_VisualizationFaces.cs" />
-    <Compile Include="Components\Cmpt_Deformations.cs" />
-    <Compile Include="Components\Cmpt_Run2D.cs" />
+    <Compile Include="Components\Results\Cmpt_Deformations.cs" />
+    <Compile Include="Components\Cmpt_RunCCX.cs" />
     <Compile Include="Components\Cmpt_LoadResults.cs" />
     <Compile Include="Api.cs" />
+    <Compile Include="FeElement.cs" />
+    <Compile Include="FeSection.cs" />
+    <Compile Include="Goo\GH_FeBoundaryCondition.cs" />
+    <Compile Include="Goo\GH_FeElement.cs" />
+    <Compile Include="Goo\GH_FeLoad.cs" />
+    <Compile Include="Goo\GH_NodeSet.cs" />
+    <Compile Include="Goo\GH_FeSurface.cs" />
+    <Compile Include="Goo\GH_FeSection.cs" />
+    <Compile Include="Gradient.cs" />
     <Compile Include="HashBucket.cs" />
+    <Compile Include="Model.cs" />
+    <Compile Include="NodeSet.cs" />
+    <Compile Include="Properties\Resources.Designer.cs">
+      <AutoGen>True</AutoGen>
+      <DesignTime>True</DesignTime>
+      <DependentUpon>Resources.resx</DependentUpon>
+    </Compile>
+    <Compile Include="PropertyMap.cs" />
+    <Compile Include="Utility.cs" />
     <Compile Include="Mesh.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="Goo\GH_FrdResults.cs" />
@@ -90,8 +135,104 @@
   </ItemGroup>
   <ItemGroup>
     <PackageReference Include="Grasshopper">
-      <Version>7.35.23346.11001</Version>
+      <Version>7.32.23221.10241</Version>
     </PackageReference>
+  </ItemGroup>
+  <ItemGroup>
+    <EmbeddedResource Include="Properties\Resources.resx">
+      <Generator>ResXFileCodeGenerator</Generator>
+      <LastGenOutput>Resources.Designer.cs</LastGenOutput>
+    </EmbeddedResource>
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="Resources\Default-24x24.png" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="Resources\Simulate-24x24.png" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="Resources\Visualization-24x24.png" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="Resources\ElementMesh-24x24.png" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="Resources\Strain-24x24.png" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="Resources\Stress-24x24.png" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="Resources\Orientations-24x24.png" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="Resources\FrdResults-24x24.png" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="Resources\RunCCX-24x24.png" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="Resources\Model2D-24x24.png" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="Resources\Model3D-24x24.png" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="Resources\ModelHygro-24x24.png" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="Resources\Model1D-24x24.png" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="Resources\BoudnaryConditionDisplacement2.png" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="Resources\BoundaryConditionDisplacement.png" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="Resources\BoundaryConditionNew.png" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="Resources\BoundaryConditionTemperature.png" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="Resources\Deformation.png" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="Resources\ElementSetNew.png" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="Resources\LoadConcentrated.png" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="Resources\LoadDistributed.png" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="Resources\LoadGravity.png" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="Resources\MeshCrease.png" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="Resources\MinMax.png" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="Resources\NodeSetMeshProximity.png" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="Resources\NodeSetNew.png" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="Resources\NodeSetPointProximity.png" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="Resources\Displacement.png" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="Resources\DeconstructSet.png" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="Resources\BeamSection.png" />
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
 </Project>

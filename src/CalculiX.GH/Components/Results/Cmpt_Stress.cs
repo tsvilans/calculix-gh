@@ -36,9 +36,9 @@ using Grasshopper.Kernel.Types;
 
 namespace CalculiX.GH.Components
 {
-    public class Cmpt_Stresses: GH_Component
+    public class Cmpt_Stress: GH_Component
     {
-        public Cmpt_Stresses()
+        public Cmpt_Stress()
             : base ("Stress", "Stress", "Get model stresses.", Api.ComponentCategory, "Results")
         { 
         }
@@ -46,10 +46,15 @@ namespace CalculiX.GH.Components
         protected override void RegisterInputParams(GH_Component.GH_InputParamManager pManager)
         {
             pManager.AddGenericParameter("Results", "R", "FrdResults object.", GH_ParamAccess.item);
+            //pManager.AddGenericParameter("Node IDs", "N", "Ids of nodes to query.", GH_ParamAccess.list);
+            //pManager[1].Optional = true;
         }
+        public override GH_Exposure Exposure => GH_Exposure.secondary;
 
         protected override void RegisterOutputParams(GH_Component.GH_OutputParamManager pManager)
         {
+            pManager.AddNumberParameter("Von Mises", "VM", "Von Mises stress.", GH_ParamAccess.list);
+
             pManager.AddNumberParameter("SXX", "SXX", "Stress in the X-direction.", GH_ParamAccess.list);
             pManager.AddNumberParameter("SYY", "SYY", "Stress in the Y-direction.", GH_ParamAccess.list);
             pManager.AddNumberParameter("SZZ", "SZZ", "Stress in the Z-direction.", GH_ParamAccess.list);
@@ -57,6 +62,8 @@ namespace CalculiX.GH.Components
             pManager.AddNumberParameter("SXY", "SXY", "Stress in the XY-plane.", GH_ParamAccess.list);
             pManager.AddNumberParameter("SYZ", "SYZ", "Stress in the YZ-plane.", GH_ParamAccess.list);
             pManager.AddNumberParameter("SZX", "SZX", "Stress in the ZX-plane.", GH_ParamAccess.list);
+
+            pManager.AddNumberParameter("Signed Max", "SMAP", "Signed maximum absolute principal stress.", GH_ParamAccess.list);
         }
 
         protected override void SolveInstance(IGH_DataAccess DA)
@@ -76,6 +83,7 @@ namespace CalculiX.GH.Components
             }
 
             float[] sxx, syy, szz, sxy, syz, szx;
+            float[] sSigned, sMax, sMid, sMin;
 
             results.Fields["STRESS"].TryGetValue("SXX", out sxx);
             results.Fields["STRESS"].TryGetValue("SYY", out syy);
@@ -84,12 +92,25 @@ namespace CalculiX.GH.Components
             results.Fields["STRESS"].TryGetValue("SYZ", out syz);
             results.Fields["STRESS"].TryGetValue("SZX", out szx);
 
+            int N = new int[] { sxx.Length, syy.Length, szz.Length, sxy.Length, syz.Length, szx.Length }.Min();
+
+            double[] vm = new double[N];
+            for (int i = 0; i < N; i++)
+            {
+                vm[i] = Utility.CalculateVonMises(sxx[i], syy[i], szz[i], sxy[i], syz[i], szx[i]);
+
+            }
+
+            Utility.ComputePrincipalInvariants(sxx, syy, szz, sxy, syz, szx, out sSigned, out sMax, out sMid, out sMin);
+
+            DA.SetDataList("Von Mises", vm.Select(x => new GH_Number(x)));
             DA.SetDataList("SXX", sxx.Select(x => new GH_Number(x)));
             DA.SetDataList("SYY", syy.Select(x => new GH_Number(x)));
             DA.SetDataList("SZZ", szz.Select(x => new GH_Number(x)));
             DA.SetDataList("SXY", sxy.Select(x => new GH_Number(x)));
             DA.SetDataList("SYZ", syz.Select(x => new GH_Number(x)));
-            DA.SetDataList("SZX", szx.Select(x => new GH_Number(x))); 
+            DA.SetDataList("SZX", szx.Select(x => new GH_Number(x)));
+            DA.SetDataList("Signed Max", sSigned.Select(x => new GH_Number(x)));
 
         }
 
@@ -97,7 +118,7 @@ namespace CalculiX.GH.Components
         {
             get
             {
-                return null;
+                return Properties.Resources.Stress_24x24;
             }
         }
 

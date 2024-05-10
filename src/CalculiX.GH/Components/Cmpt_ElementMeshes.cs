@@ -43,6 +43,7 @@ namespace CalculiX.GH.Components
             : base ("Element Mesh", "EleM", "Get the mesh of each element.", Api.ComponentCategory, "Results")
         { 
         }
+        public override GH_Exposure Exposure => GH_Exposure.tertiary;
 
         protected override void RegisterInputParams(GH_Component.GH_InputParamManager pManager)
         {
@@ -123,7 +124,7 @@ namespace CalculiX.GH.Components
         {
             get
             {
-                return null;
+                return Properties.Resources.ElementMesh_24x24;
             }
         }
 

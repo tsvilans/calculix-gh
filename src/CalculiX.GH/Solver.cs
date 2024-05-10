@@ -8,60 +8,6 @@ using System.Threading.Tasks;
 
 namespace CalculiX
 {
-    public abstract class FeElement
-    {
-        public int Id;
-        public int[] Indices;
-        public abstract string Type { get; }
-    }
-
-    public class ElementB31 : FeElement
-    {
-        public override string Type
-        {
-            get { return "B31"; }
-        }
-
-        public ElementB31(int id, int a, int b)
-        {
-            Id = id;
-            Indices = new int[] { a, b };
-        }
-    }
-
-    public class ElementB32 : FeElement
-    {
-        public override string Type
-        {
-            get { return "B32"; }
-        }
-
-        public ElementB32(int id, int a, int b, int c)
-        {
-            Id = id;
-            Indices = new int[] { a, b, c };
-        }
-    }
-
-    class BeamSection
-    {
-        public string Name;
-        public double Width, Height;
-        public string ElementSet;
-        public string Material;
-
-        public Vector3d Direction = Vector3d.ZAxis;
-
-        public BeamSection(string name, double width, double height, string material = "", string eset = "")
-        {
-            Name = name;
-            Width = width;
-            Height = height;
-            ElementSet = eset;
-            Material = material;
-        }
-    }
-
     class BeamSolver
     {
         public bool BinaryOutput = true;

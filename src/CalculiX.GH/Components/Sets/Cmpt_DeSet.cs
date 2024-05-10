@@ -33,65 +33,54 @@ using FrdReader;
 using Grasshopper;
 using Grasshopper.Kernel.Data;
 using Grasshopper.Kernel.Types;
+using System.Drawing.Drawing2D;
 
 namespace CalculiX.GH.Components
 {
-    public class Cmpt_GetNodesAndElements : GH_Component
+    public class Cmpt_DeSet : GH_Component
     {
-        public Cmpt_GetNodesAndElements()
-            : base ("Nodes Elements", "NE", "Get all nodes and elements in model.", Api.ComponentCategory, "Results")
+        public Cmpt_DeSet()
+            : base ("Deconstruct Set", "DeSet", "Deconstruct a element or node set into its tags.", Api.ComponentCategory, "Sets")
         { 
         }
         public override GH_Exposure Exposure => GH_Exposure.tertiary;
 
         protected override void RegisterInputParams(GH_Component.GH_InputParamManager pManager)
         {
-            pManager.AddGenericParameter("Results", "R", "FrdResults object.", GH_ParamAccess.item);
+            pManager.AddGenericParameter("Set", "S", "Node or element set.", GH_ParamAccess.item);
         }
 
         protected override void RegisterOutputParams(GH_Component.GH_OutputParamManager pManager)
         {
-            pManager.AddPointParameter("Nodes", "N", "Nodes as tree. Tree path corresponds to node ID.", GH_ParamAccess.tree);
-            pManager.AddIntegerParameter("Elements", "E", "Elements as tree. Tree path corresponds to element ID.", GH_ParamAccess.tree);
+            pManager.AddTextParameter("Name", "N", "Name of set.", GH_ParamAccess.item);
+            pManager.AddIntegerParameter("Tags", "T", "Node or element tags.", GH_ParamAccess.list);
         }
 
         protected override void SolveInstance(IGH_DataAccess DA)
         {
-            FrdResults results = null;
-            DataTree<GH_Point> outputNodes = new DataTree<GH_Point>();
-            DataTree<int> outputElements = new DataTree<int>();
+            GH_FeSet ghSet = null;
+            GenericSet feSet = null;
 
-            if (!DA.GetData<FrdResults>("Results", ref results))
-            {
-                AddRuntimeMessage(GH_RuntimeMessageLevel.Warning, "Failed to parse results.");
-                return;
-            }
+            DA.GetData("Set", ref ghSet);
 
-            foreach (var node in  results.Nodes) 
-            {
-                outputNodes.Add(new GH_Point(new Point3d(node.X, node.Y, node.Z)), new GH_Path(node.Id));
-            }
+            if (ghSet == null) return;
+            feSet = ghSet.Value;
 
-            foreach (var element in results.Elements)
-            {
-                outputElements.AddRange(element.Indices, new GH_Path(element.Id));
-            }
-
-            DA.SetDataTree(0, outputNodes);
-            DA.SetDataTree(1, outputElements);
-        }
+            DA.SetData("Name", feSet.Name);
+            DA.SetDataList("Tags", feSet.Tags);
+           }
 
         protected override System.Drawing.Bitmap Icon
         {
             get
             {
-                return Properties.Resources.Default_24x24;
+                return Properties.Resources.DeconstructSet;
             }
         }
 
         public override Guid ComponentGuid
         {
-            get { return new Guid("ad1f078f-6f09-4129-9092-6893e4f6c1af"); }
+            get { return new Guid("c27991bf-7f1b-46c4-826e-373a108f6f97"); }
         }
     }
 }
