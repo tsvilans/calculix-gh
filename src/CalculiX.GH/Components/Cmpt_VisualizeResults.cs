@@ -55,9 +55,12 @@ namespace CalculiX.GH.Components
 
         public ResultComponent(float[] values)
         {
-            Values = values;
+            Values = new float[values.Length];
+            Array.Copy(values, Values, Values.Length);
+
             (float maxValue, int maxValueId) = Values.Select((n, i) => (n, i)).Max();
             (float minValue, int minValueId) = Values.Select((n, i) => (n, i)).Min();
+            
             Min = minValue;
             Max = maxValue;
             MinId = minValueId;
@@ -77,6 +80,7 @@ namespace CalculiX.GH.Components
             //Params.OnParametersChanged();
             Params.ParameterSourcesChanged += Params_ParameterSourcesChanged;
         }
+
 
         protected override System.Drawing.Bitmap Icon => Properties.Resources.Visualization_24x24;
         public override Guid ComponentGuid => new Guid("7466fcc1-f219-420c-815d-d542e97a1a1c");
@@ -100,6 +104,7 @@ namespace CalculiX.GH.Components
         int resultsParam = 0, gammaParam = 0, deformationParam = 0;
         IGH_Param fieldParam = null, componentParam = null;
         double scale = 1.0; // assuming SI units (meters)
+        bool drawMinMax = true, drawFieldAndComponent = true;
 
         // Display mesh
         Mesh originalMesh = null, deformedMesh = null;
@@ -262,6 +267,23 @@ namespace CalculiX.GH.Components
             componentParam.Optional = true;
             pManager[gammaParam].Optional = true;
             pManager[deformationParam].Optional = true;
+        }
+
+        protected override void AppendAdditionalComponentMenuItems(System.Windows.Forms.ToolStripDropDown menu)
+        {
+            Menu_AppendItem(menu, "Min/max", ToggleDrawMinMax, true, drawMinMax);
+            //Menu_AppendItem(menu, "Field", ToggleDrawFieldAndComponent, true, drawFieldAndComponent);
+        }
+
+        private void ToggleDrawMinMax(object sender, EventArgs e)
+        {
+            drawMinMax = !drawMinMax;
+            ExpirePreview(true);
+        }
+        private void ToggleDrawFieldAndComponent(object sender, EventArgs e)
+        {
+            drawFieldAndComponent = !drawFieldAndComponent;
+            ExpirePreview(true);
         }
 
         protected override void RegisterOutputParams(GH_Component.GH_OutputParamManager pManager)
@@ -590,16 +612,8 @@ namespace CalculiX.GH.Components
                 //args.Display.DrawMeshShaded(deformedMesh, material);
                 args.Display.DrawMeshFalseColors(deformedMesh);
             }
-        }
 
-        public override void DrawViewportWires(IGH_PreviewArgs args)
-        {
-            if (creasesOriginal != null)
-                args.Display.DrawLines(creasesOriginal, System.Drawing.Color.White, 1);
-            if (creasesDeformed != null)
-                args.Display.DrawLines(creasesDeformed, System.Drawing.Color.Black, 1);
-
-            if (fields.ContainsKey(activeField) && fields[activeField].ContainsKey(activeComponents[activeField]))
+            if (drawMinMax && fields.ContainsKey(activeField) && fields[activeField].ContainsKey(activeComponents[activeField]))
             {
                 var res = fields[activeField][activeComponents[activeField]];
                 FrdNode minNode = results.Nodes[res.MinId], maxNode = results.Nodes[res.MaxId];
@@ -609,20 +623,42 @@ namespace CalculiX.GH.Components
                 var sminPoint = args.Display.Viewport.WorldToClient(minPoint);
                 var smaxPoint = args.Display.Viewport.WorldToClient(maxPoint);
 
+                ///var tempDepthMode = args.Display.DepthMode;
+                //args.Display.DepthMode = DepthMode.AlwaysInFront;
+
+                args.Display.PushDepthTesting(false);
                 args.Display.DrawPoint(minPoint, PointStyle.Circle, 2, System.Drawing.Color.White);
                 args.Display.DrawPoint(maxPoint, PointStyle.Circle, 2, System.Drawing.Color.White);
+                args.Display.PopDepthTesting();
 
                 if (activeField == "ERROR")
                 {
-                    args.Display.Draw2dText($"Min: {res.Min}%", System.Drawing.Color.White, new Point2d(sminPoint.X, sminPoint.Y - 16), true, 16);
-                    args.Display.Draw2dText($"Max: {res.Max}%", System.Drawing.Color.White, new Point2d(smaxPoint.X, smaxPoint.Y + 16), true, 16);
+                    args.Display.Draw2dText($"Min: {res.Min:0.00}%", System.Drawing.Color.White, new Point2d(sminPoint.X, sminPoint.Y - 16), true, 16);
+                    args.Display.Draw2dText($"Max: {res.Max:0.00}%", System.Drawing.Color.White, new Point2d(smaxPoint.X, smaxPoint.Y + 16), true, 16);
                 }
                 else
                 {
-                    args.Display.Draw2dText($"Min: {res.Min:#0.000E0}", System.Drawing.Color.White, new Point2d(sminPoint.X, sminPoint.Y - 16), true, 16);
-                    args.Display.Draw2dText($"Max: {res.Max:#0.000E0}", System.Drawing.Color.White, new Point2d(smaxPoint.X, smaxPoint.Y + 16), true, 16);
+                    args.Display.Draw2dText($"Min: {res.Min:0.000e+0}", System.Drawing.Color.White, new Point2d(sminPoint.X, sminPoint.Y - 16), true, 16);
+                    args.Display.Draw2dText($"Max: {res.Max:0.000e+0}", System.Drawing.Color.White, new Point2d(smaxPoint.X, smaxPoint.Y + 16), true, 16);
                 }
+                //args.Display.DepthMode = tempDepthMode;
             }
+
+            /*
+            if(drawFieldAndComponent)
+            {
+                args.Display.Draw2dText($"{activeField}", System.Drawing.Color.White, new Point2d(16, 32), false, 18);
+                args.Display.Draw2dText($"{activeComponents[activeField]}", System.Drawing.Color.White, new Point2d(16, 50), false, 18);
+            }
+            */
+        }
+
+        public override void DrawViewportWires(IGH_PreviewArgs args)
+        {
+            if (creasesOriginal != null)
+                args.Display.DrawLines(creasesOriginal, System.Drawing.Color.White, 1);
+            if (creasesDeformed != null)
+                args.Display.DrawLines(creasesDeformed, System.Drawing.Color.Black, 1);
         } 
 
         protected override void BeforeSolveInstance()
