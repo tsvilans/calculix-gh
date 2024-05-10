@@ -104,7 +104,7 @@ namespace CalculiX.GH.Components
         int resultsParam = 0, gammaParam = 0, deformationParam = 0;
         IGH_Param fieldParam = null, componentParam = null;
         double scale = 1.0; // assuming SI units (meters)
-        bool drawMinMax = true, drawFieldAndComponent = true;
+        bool drawMinMax = true, drawMesh = true;
 
         // Display mesh
         Mesh originalMesh = null, deformedMesh = null;
@@ -272,7 +272,7 @@ namespace CalculiX.GH.Components
         protected override void AppendAdditionalComponentMenuItems(System.Windows.Forms.ToolStripDropDown menu)
         {
             Menu_AppendItem(menu, "Min/max", ToggleDrawMinMax, true, drawMinMax);
-            //Menu_AppendItem(menu, "Field", ToggleDrawFieldAndComponent, true, drawFieldAndComponent);
+            Menu_AppendItem(menu, "Mesh", ToggleDrawMesh, true, drawMesh);
         }
 
         private void ToggleDrawMinMax(object sender, EventArgs e)
@@ -280,9 +280,9 @@ namespace CalculiX.GH.Components
             drawMinMax = !drawMinMax;
             ExpirePreview(true);
         }
-        private void ToggleDrawFieldAndComponent(object sender, EventArgs e)
+        private void ToggleDrawMesh(object sender, EventArgs e)
         {
-            drawFieldAndComponent = !drawFieldAndComponent;
+            drawMesh = !drawMesh;
             ExpirePreview(true);
         }
 
@@ -606,7 +606,7 @@ namespace CalculiX.GH.Components
 
         public override void DrawViewportMeshes(IGH_PreviewArgs args)
         {
-            if (deformedMesh != null)
+            if (deformedMesh != null && drawMesh)
             {
                 //var material = new DisplayMaterial(System.Drawing.Color.White);
                 //args.Display.DrawMeshShaded(deformedMesh, material);
