@@ -22,6 +22,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using Eto.Drawing;
 
 using Rhino.Geometry;
 
@@ -40,9 +41,30 @@ using System.Drawing;
 using Rhino;
 using System.Data.SqlTypes;
 using System.Windows.Forms;
+using GH_IO.Serialization;
+using Grasshopper.Kernel.Components;
+using Eto.Drawing;
 
 namespace CalculiX.GH.Components
 {
+    internal class ResultComponent
+    {
+        public int MinId, MaxId;
+        public float Min, Max;
+        public float[] Values;
+
+        public ResultComponent(float[] values)
+        {
+            Values = values;
+            (float maxValue, int maxValueId) = Values.Select((n, i) => (n, i)).Max();
+            (float minValue, int minValueId) = Values.Select((n, i) => (n, i)).Min();
+            Min = minValue;
+            Max = maxValue;
+            MinId = minValueId;
+            MaxId = maxValueId;
+        }
+    }
+
     public class Cmpt_VisualizeResults : GH_Component
     {
         public Cmpt_VisualizeResults()
@@ -52,11 +74,12 @@ namespace CalculiX.GH.Components
             activeField = string.Empty;
 
             //Params.ParameterChanged += Params_ParameterChanged;
-            Params.ParameterSourcesChanged += Params_ParameterSourcesChanged;
-
             //Params.OnParametersChanged();
+            Params.ParameterSourcesChanged += Params_ParameterSourcesChanged;
         }
 
+        protected override System.Drawing.Bitmap Icon => Properties.Resources.Visualization_24x24;
+        public override Guid ComponentGuid => new Guid("7466fcc1-f219-420c-815d-d542e97a1a1c");
         public override GH_Exposure Exposure => GH_Exposure.primary;
         public override BoundingBox ClippingBox
         {
@@ -70,7 +93,6 @@ namespace CalculiX.GH.Components
                 {
                     bb.Union(deformedMesh.GetBoundingBox(true));
                 }
-
                 return bb;
             }
         }
@@ -87,7 +109,7 @@ namespace CalculiX.GH.Components
         // Results and fields
         bool reload = false;
         FrdResults results = null;
-        Dictionary<string, Dictionary<string, float[]>> fields = null;
+        Dictionary<string, Dictionary<string, ResultComponent>> fields = null;
 
         // Active field and components
         Dictionary<string, string> activeComponents = null;
@@ -207,6 +229,23 @@ namespace CalculiX.GH.Components
             }
         }
 
+        public override bool Write(GH_IWriter writer)
+        {
+            writer.SetString("active_field", activeField);
+            writer.SetString("active_component", activeComponents[activeField]);
+            return base.Write(writer);
+        }
+
+        public override bool Read(GH_IReader reader)
+        {
+            reader.TryGetString("active_field", ref activeField);
+            var component = "";
+            reader.TryGetString("active_component", ref component);
+
+            activeComponents[activeField] = component;
+            return base.Read(reader);
+        }
+
         protected override void RegisterInputParams(GH_Component.GH_InputParamManager pManager)
         {
             resultsParam = pManager.AddGenericParameter("Results", "R", "FrdResults object.", GH_ParamAccess.item);
@@ -227,8 +266,6 @@ namespace CalculiX.GH.Components
 
         protected override void RegisterOutputParams(GH_Component.GH_OutputParamManager pManager)
         {
-            //pManager.AddIntegerParameter("Nodes", "N", "Indices of active visualization nodes.", GH_ParamAccess.list);
-            //pManager.AddIntegerParameter("Faces", "F", "Visualization faces as a DataTree.", GH_ParamAccess.tree);
             pManager.AddMeshParameter("Mesh", "M", "Output deformed mesh.", GH_ParamAccess.item);
         }
 
@@ -256,7 +293,6 @@ namespace CalculiX.GH.Components
 
             double displacementFactor = 1.0;
             DA.GetData("Deformation", ref displacementFactor);
-
 
             if (displacements != null)
             {
@@ -306,17 +342,30 @@ namespace CalculiX.GH.Components
                 AddRuntimeMessage(GH_RuntimeMessageLevel.Remark, $"{af} : {ac} (new)");
                 Message = $"{ac}";
 
-                fields.TryGetValue(af, out Dictionary<string, float[]> components);
+                fields.TryGetValue(af, out Dictionary<string, ResultComponent> components);
                 if (components == null) return;
 
-                components.TryGetValue(ac, out float[] values);
-                if (values == null) return;
+                components.TryGetValue(ac, out ResultComponent component);
+                if (component == null) return;
 
+                var values = component.Values;
                 var max = Math.Max(Math.Abs(values.Min()), Math.Abs(values.Max()));
 
                 if ((af == "DISP" && ac == "ALL") || ac == "VONMISES")
                 {
                     visualizationGradient = new UnsignedGradient(max);
+                    visualizationGradient.Stops = new System.Drawing.Color[]
+                    {
+                    System.Drawing.Color.Blue,
+                    System.Drawing.Color.White,
+                    //System.Drawing.Color.Lime,
+                    //System.Drawing.Color.Yellow,
+                    System.Drawing.Color.Red
+                    };
+                }
+                else if ((af == "ERROR"))
+                {
+                    visualizationGradient = new UnsignedGradient(100.0);
                     visualizationGradient.Stops = new System.Drawing.Color[]
                     {
                     System.Drawing.Color.Blue,
@@ -345,14 +394,16 @@ namespace CalculiX.GH.Components
                 }
             }
 
-            if (deformedMesh != null && visualizationColors != null)
+            if (deformedMesh != null)
             {
-                deformedMesh.VertexColors.Clear();
-                deformedMesh.VertexColors.AppendColors(visualizationColors);
+                if (visualizationColors != null)
+                {
+                    deformedMesh.VertexColors.Clear();
+                    deformedMesh.VertexColors.AppendColors(visualizationColors);
+                }
+                DA.SetData("Mesh", deformedMesh);
             }
 
-            if (deformedMesh != null)
-                DA.SetData("Mesh", deformedMesh);
         }
 
         protected double[] ApplyGamma(double[] data, double gamma)
@@ -413,29 +464,7 @@ namespace CalculiX.GH.Components
                 index++;
             }
 
-            //for (int i = 0; i < faces.Count; ++i)
-            //{
-            //    for (int j = 0; j < faces[i].Length; ++j)
-            //    {
-            //        faces[i][j] = nodeMap[faces[i][j]];
-            //    }
-            //}
-
-            //var nodeMap2 = new Dictionary<int, Point3d>();
             var distortedNodeMap = new Dictionary<int, Point3d>();
-
-
-            //for (int i = 0; i < results.Nodes.Count; ++i)
-            //{
-            //    var node = results.Nodes[i];
-            //    nodeMap[node.Id] = new Point3d(node.X, node.Y, node.Z);
-            //}
-
-            //for (int i = 0; i < vizNodes.Count; ++i)
-            //{
-            //    var node = results.Nodes[vizNodes[i]];
-            //    nodeMap2[i] = new Point3d(node.X, node.Y, node.Z) * scale;
-            //}
 
             originalMesh = Utility.CreateShellMesh(originalNodeMap, faces);
             creasesOriginal = originalMesh.ExtractCreases(0.3).ToArray();
@@ -447,81 +476,19 @@ namespace CalculiX.GH.Components
 
         public void PopulateFields(FrdResults results, List<int> indices)
         {
-            fields = new Dictionary<string, Dictionary<string, float[]>>();
-            /*
-            fields = new Dictionary<string, Dictionary<string, float[]>>
-            {
-                {
-                    "STRESS", new Dictionary<string, float[]>
-                    {
-                        { "SXX", null },
-                        { "SYY", null },
-                        { "SZZ", null },
-                        { "SXY", null },
-                        { "SYZ", null },
-                        { "SZX", null },
-                    }
-                },
-                {
-                    "TOSTRAIN", new Dictionary<string, float[]>
-                    {
-                        { "EXX", null },
-                        { "EYY", null },
-                        { "EZZ", null },
-                        { "EXY", null },
-                        { "EYZ", null },
-                        { "EZX", null },
-                    }
-                },
-                {
-                    "DISP", new Dictionary<string, float[]>
-                    {
-                        { "D1", null },
-                        { "D2", null },
-                        { "D3", null },
-                    }
-                },
-                {
-                    "ERROR", new Dictionary<string, float[]>
-                    {
-                        { "STR (%)", null }
-                    }
-                }
-            };
-
-
-
-            var fieldList = fields.Keys.ToArray();
-
-            for (int i = 0; i < fieldList.Length; ++i)
-            {
-                var fieldName = fieldList[i];
-                var fieldData = fields[fieldList[i]];
-
-                if (!results.Fields.ContainsKey(fieldName))
-                    continue;
-
-                var componentList = fields[fieldName].Keys.ToArray();
-                for (int j = 0; j < componentList.Length; ++j)
-                {
-                    var componentName = componentList[j];
-                    results.Fields[fieldName].TryGetValue(componentName, out float[] temp);
-
-                    fields[fieldName][componentName] = indices.Select(x => temp[x]).ToArray();
-                }
-            }
-            */
-
+            fields = new Dictionary<string, Dictionary<string, ResultComponent>>();
+ 
             foreach(var kvp in results.Fields)
             {
                 var fieldName = kvp.Key;
-                var fieldData = new Dictionary<string, float[]>();
+                var fieldData = new Dictionary<string, ResultComponent>();
 
 
                 foreach (var kvp2 in results.Fields[fieldName])
                 {
-                    fieldData.Add(kvp2.Key, indices.Select(x => kvp2.Value[x]).ToArray());
+                    fieldData.Add(kvp2.Key, new ResultComponent(kvp2.Value));
                 }
+
                 if (fieldData.Count > 0)
                 {
                     fields.Add(fieldName, fieldData);
@@ -544,18 +511,18 @@ namespace CalculiX.GH.Components
                 var stressField = fields["STRESS"];
 
                 float[] sSigned, sMax, sMid, sMin;
-                float[] sxx = stressField["SXX"],
-                    syy = stressField["SYY"],
-                    szz = stressField["SZZ"],
-                    sxy = stressField["SXY"],
-                    syz = stressField["SYZ"],
-                    szx = stressField["SZX"];
+                float[] sxx = stressField["SXX"].Values,
+                    syy = stressField["SYY"].Values,
+                    szz = stressField["SZZ"].Values,
+                    sxy = stressField["SXY"].Values,
+                    syz = stressField["SYZ"].Values,
+                    szx = stressField["SZX"].Values;
 
                 float[] vm = Utility.CalculateVonMises(sxx, syy, szz, sxy, syz, szx);
                 Utility.ComputePrincipalInvariants(sxx, syy, szz, sxy, syz, szx, out sSigned, out sMax, out sMid, out sMin);
 
-                fields["STRESS"].Add("VONMISES", vm);
-                fields["STRESS"].Add("SIGNED", sSigned);
+                fields["STRESS"].Add("VONMISES", new ResultComponent(vm));
+                fields["STRESS"].Add("SIGNED", new ResultComponent(sSigned));
             }
 
             // Calculate strain principal invariants and von Mises
@@ -564,18 +531,18 @@ namespace CalculiX.GH.Components
                 var strainField = fields["TOSTRAIN"];
 
                 float[] eSigned, eMax, eMid, eMin;
-                float[] exx = strainField["EXX"],
-                    eyy = strainField["EYY"],
-                    ezz = strainField["EZZ"],
-                    exy = strainField["EXY"],
-                    eyz = strainField["EYZ"],
-                    ezx = strainField["EZX"];
+                float[] exx = strainField["EXX"].Values,
+                    eyy = strainField["EYY"].Values,
+                    ezz = strainField["EZZ"].Values,
+                    exy = strainField["EXY"].Values,
+                    eyz = strainField["EYZ"].Values,
+                    ezx = strainField["EZX"].Values;
 
                 float[]vm = Utility.CalculateVonMises(exx, eyy, ezz, exy, eyz, ezx);
                 Utility.ComputePrincipalInvariants(exx, eyy, ezz, exy, eyz, ezx, out eSigned, out eMax, out eMid, out eMin);
 
-                fields["TOSTRAIN"].Add("VONMISES", vm);
-                fields["TOSTRAIN"].Add("SIGNED", eSigned);
+                fields["TOSTRAIN"].Add("VONMISES", new ResultComponent(vm));
+                fields["TOSTRAIN"].Add("SIGNED", new ResultComponent(eSigned));
             }
 
             // Calculate displacement vector and scale displacements to model units
@@ -588,9 +555,9 @@ namespace CalculiX.GH.Components
                 {
                     for (int i = 0; i < displacements.Length; ++i)
                     {
-                        dispField["D1"][i] = dispField["D1"][i] * (float)scale;
-                        dispField["D2"][i] = dispField["D2"][i] * (float)scale;
-                        dispField["D3"][i] = dispField["D3"][i] * (float)scale;
+                        dispField["D1"].Values[i] = dispField["D1"].Values[i] * (float)scale;
+                        dispField["D2"].Values[i] = dispField["D2"].Values[i] * (float)scale;
+                        dispField["D3"].Values[i] = dispField["D3"].Values[i] * (float)scale;
                     }
                 }
 
@@ -598,11 +565,20 @@ namespace CalculiX.GH.Components
 
                 for (int i = 0; i < displacements.Length; ++i)
                 {
-                    displacements[i] = new Vector3f(dispField["D1"][i], dispField["D2"][i], dispField["D3"][i]);
+                    displacements[i] = new Vector3f(dispField["D1"].Values[i], dispField["D2"].Values[i], dispField["D3"].Values[i]);
                     all[i] = displacements[i].Length;
                 }
 
-                fields["DISP"].Add("ALL", all);
+                fields["DISP"].Add("ALL", new ResultComponent(all));
+            }
+
+            // Constrain the result values to the visualisation mesh
+            foreach (var fieldKvp in fields)
+            {
+                foreach (var componentKvp in fieldKvp.Value)
+                {
+                    componentKvp.Value.Values = indices.Select(x => componentKvp.Value.Values[x]).ToArray();
+                }
             }
         }
 
@@ -622,6 +598,31 @@ namespace CalculiX.GH.Components
                 args.Display.DrawLines(creasesOriginal, System.Drawing.Color.White, 1);
             if (creasesDeformed != null)
                 args.Display.DrawLines(creasesDeformed, System.Drawing.Color.Black, 1);
+
+            if (fields.ContainsKey(activeField) && fields[activeField].ContainsKey(activeComponents[activeField]))
+            {
+                var res = fields[activeField][activeComponents[activeField]];
+                FrdNode minNode = results.Nodes[res.MinId], maxNode = results.Nodes[res.MaxId];
+                Point3d minPoint = new Point3d(minNode.X, minNode.Y, minNode.Z) * scale;
+                Point3d maxPoint = new Point3d(maxNode.X, maxNode.Y, maxNode.Z) * scale;
+
+                var sminPoint = args.Display.Viewport.WorldToClient(minPoint);
+                var smaxPoint = args.Display.Viewport.WorldToClient(maxPoint);
+
+                args.Display.DrawPoint(minPoint, PointStyle.Circle, 2, System.Drawing.Color.White);
+                args.Display.DrawPoint(maxPoint, PointStyle.Circle, 2, System.Drawing.Color.White);
+
+                if (activeField == "ERROR")
+                {
+                    args.Display.Draw2dText($"Min: {res.Min}%", System.Drawing.Color.White, new Point2d(sminPoint.X, sminPoint.Y - 16), true, 16);
+                    args.Display.Draw2dText($"Max: {res.Max}%", System.Drawing.Color.White, new Point2d(smaxPoint.X, smaxPoint.Y + 16), true, 16);
+                }
+                else
+                {
+                    args.Display.Draw2dText($"Min: {res.Min:#0.000E0}", System.Drawing.Color.White, new Point2d(sminPoint.X, sminPoint.Y - 16), true, 16);
+                    args.Display.Draw2dText($"Max: {res.Max:#0.000E0}", System.Drawing.Color.White, new Point2d(smaxPoint.X, smaxPoint.Y + 16), true, 16);
+                }
+            }
         } 
 
         protected override void BeforeSolveInstance()
@@ -644,7 +645,7 @@ namespace CalculiX.GH.Components
                 }
 
                 fieldValueList.CreateAttributes();
-                fieldValueList.Attributes.Pivot = new PointF(this.Attributes.Pivot.X - 180, this.Attributes.Pivot.Y - 31);
+                fieldValueList.Attributes.Pivot = new System.Drawing.PointF(this.Attributes.Pivot.X - 180, this.Attributes.Pivot.Y - 31);
                 fieldValueList.ListItems.Clear();
 
                 foreach (string fieldName in fields.Keys)
@@ -673,7 +674,7 @@ namespace CalculiX.GH.Components
                 }
 
                 componentValueList.CreateAttributes();
-                componentValueList.Attributes.Pivot = new PointF(this.Attributes.Pivot.X - 180, this.Attributes.Pivot.Y - 61);
+                componentValueList.Attributes.Pivot = new System.Drawing.PointF(this.Attributes.Pivot.X - 180, this.Attributes.Pivot.Y - 61);
                 componentValueList.ListItems.Clear();
 
                 foreach (string componentName in fields[activeField].Keys)
@@ -685,19 +686,6 @@ namespace CalculiX.GH.Components
                 componentParam.AddSource(componentValueList);
                 componentParam.CollectData();
             }
-        }
-
-        protected override System.Drawing.Bitmap Icon
-        {
-            get
-            {
-                return Properties.Resources.Visualization_24x24;
-            }
-        }
-
-        public override Guid ComponentGuid
-        {
-            get { return new Guid("7466fcc1-f219-420c-815d-d542e97a1a1c"); }
         }
     }
 }
