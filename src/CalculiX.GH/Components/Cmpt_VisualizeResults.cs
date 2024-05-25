@@ -237,7 +237,8 @@ namespace CalculiX.GH.Components
         public override bool Write(GH_IWriter writer)
         {
             writer.SetString("active_field", activeField);
-            writer.SetString("active_component", activeComponents[activeField]);
+
+            string activeComponent = activeComponents.ContainsKey(activeField) ? activeComponents[activeField] : "";
             return base.Write(writer);
         }
 
@@ -571,7 +572,7 @@ namespace CalculiX.GH.Components
             if (fields.ContainsKey("DISP"))
             {
                 var dispField = fields["DISP"];
-                displacements = new Vector3f[originalMesh.Vertices.Count];
+                displacements = new Vector3f[results.Nodes.Count];
 
                 if (scale != 1.0)
                 {
@@ -602,6 +603,8 @@ namespace CalculiX.GH.Components
                     componentKvp.Value.Values = indices.Select(x => componentKvp.Value.Values[x]).ToArray();
                 }
             }
+
+            displacements = indices.Select(x => displacements[x]).ToArray();
         }
 
         public override void DrawViewportMeshes(IGH_PreviewArgs args)
