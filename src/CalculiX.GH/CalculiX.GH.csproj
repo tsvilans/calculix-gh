@@ -1,56 +1,35 @@
-﻿<?xml version="1.0" encoding="utf-8"?>
-<Project ToolsVersion="15.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
-  <Import Project="$(MSBuildExtensionsPath)\$(MSBuildToolsVersion)\Microsoft.Common.props" Condition="Exists('$(MSBuildExtensionsPath)\$(MSBuildToolsVersion)\Microsoft.Common.props')" />
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>net7.0-windows</TargetFramework>
+    <UseWPF>true</UseWPF>
+    <UseWindowsForms>true</UseWindowsForms>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+    <Deterministic>false</Deterministic>
+    <PackageOutputPath>..\..\bin\</PackageOutputPath>
+    <AssemblyVersion>2.0.*</AssemblyVersion>
+    <FileVersion>2.0.*</FileVersion>
+    <Title>CalculiX.GH</Title>
+    <AssemblyName>CalculiX.GH</AssemblyName>
+    <Company>Tom Svilans</Company>
+    <Copyright>Copyright (c) 2025</Copyright>
+    <BaseOutputPath>..\..\bin</BaseOutputPath>
+    <OutputPath>..\..\bin</OutputPath>
+  </PropertyGroup>
+
+  <PropertyGroup>
+    <AppendTargetFrameworkToOutputPath>false</AppendTargetFrameworkToOutputPath>
+  </PropertyGroup>
+  
   <PropertyGroup>
     <TargetExt>.gha</TargetExt>
   </PropertyGroup>
-  <PropertyGroup>
-    <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
-    <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
-    <ProjectGuid>{F2E9FFBD-0D60-4683-9759-7F84CC760AA7}</ProjectGuid>
-    <OutputType>Library</OutputType>
-    <AppDesignerFolder>Properties</AppDesignerFolder>
-    <RootNamespace>CalculiX.GH</RootNamespace>
-    <AssemblyName>CalculiX.GH</AssemblyName>
-    <TargetFrameworkVersion>v4.8</TargetFrameworkVersion>
-    <FileAlignment>512</FileAlignment>
-    <Deterministic>false</Deterministic>
-  </PropertyGroup>
-  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
-    <DebugSymbols>true</DebugSymbols>
-    <DebugType>full</DebugType>
-    <Optimize>false</Optimize>
-    <OutputPath>bin\Debug\</OutputPath>
-    <DefineConstants>DEBUG;TRACE</DefineConstants>
-    <ErrorReport>prompt</ErrorReport>
-    <WarningLevel>4</WarningLevel>
-  </PropertyGroup>
-  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' ">
-    <DebugType>pdbonly</DebugType>
-    <Optimize>true</Optimize>
-    <OutputPath>bin\Release\</OutputPath>
-    <DefineConstants>TRACE</DefineConstants>
-    <ErrorReport>prompt</ErrorReport>
-    <WarningLevel>4</WarningLevel>
-  </PropertyGroup>
-  <PropertyGroup Condition="'$(Configuration)|$(Platform)' == 'Debug|x64'">
-    <DebugSymbols>true</DebugSymbols>
-    <OutputPath>..\..\bin\</OutputPath>
-    <DefineConstants>DEBUG;TRACE</DefineConstants>
-    <DebugType>full</DebugType>
-    <PlatformTarget>x64</PlatformTarget>
-    <LangVersion>7.3</LangVersion>
-    <ErrorReport>prompt</ErrorReport>
-  </PropertyGroup>
-  <PropertyGroup Condition="'$(Configuration)|$(Platform)' == 'Release|x64'">
-    <OutputPath>..\..\bin\</OutputPath>
-    <DefineConstants>TRACE</DefineConstants>
-    <Optimize>true</Optimize>
-    <DebugType>pdbonly</DebugType>
-    <PlatformTarget>x64</PlatformTarget>
-    <LangVersion>7.3</LangVersion>
-    <ErrorReport>prompt</ErrorReport>
-  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Grasshopper" Version="8.10.24226.13001" />
+  </ItemGroup>  
+
   <ItemGroup>
     <Reference Include="FrdReader">
       <HintPath>..\..\dep\FrdReader.dll</HintPath>
@@ -61,178 +40,21 @@
     <Reference Include="GmshRhino">
       <HintPath>..\..\dep\GmshRhino.dll</HintPath>
     </Reference>
-    <Reference Include="System" />
-    <Reference Include="System.Core" />
-    <Reference Include="System.Drawing" />
-    <Reference Include="System.Windows.Forms" />
-    <Reference Include="System.Xml.Linq" />
-    <Reference Include="System.Data.DataSetExtensions" />
-    <Reference Include="Microsoft.CSharp" />
-    <Reference Include="System.Data" />
-    <Reference Include="System.Net.Http" />
-    <Reference Include="System.Xml" />
   </ItemGroup>
+
   <ItemGroup>
-    <Compile Include="CompareIntArray.cs" />
-    <Compile Include="Components\Cmpt_BeamSection.cs" />
-    <Compile Include="Components\Cmpt_MeshShell.cs" />
-    <Compile Include="Components\Cmpt_MeshCurves.cs" />
-    <Compile Include="Components\Cmpt_Model1D.cs" />
-    <Compile Include="Components\Cmpt_LogKnotOrientations.cs" />
-    <Compile Include="Components\Cmpt_VisualizeResults.cs" />
-    <Compile Include="Components\LoadsBC\Cmpt_TemperatureBC.cs" />
-    <Compile Include="Components\LoadsBC\Cmpt_DisplacementBC.cs" />
-    <Compile Include="Components\LoadsBC\Cmpt_CreateBC.cs" />
-    <Compile Include="Components\LoadsBC\Cmpt_GLoad.cs" />
-    <Compile Include="Components\Cmpt_Curves2Beams.cs" />
-    <Compile Include="Components\LoadsBC\Cmpt_CLoad.cs" />
-    <Compile Include="Components\Results\Cmpt_Displacement.cs" />
-    <Compile Include="Components\Sets\Cmpt_ElementSetCreate.cs" />
-    <Compile Include="Components\Sets\Cmpt_DeSet.cs" />
-    <Compile Include="Components\Sets\Cmpt_NodeSetCreate.cs" />
-    <Compile Include="Components\Sets\Cmpt_NodeSetPoints.cs" />
-    <Compile Include="Components\Sets\Cmpt_NodeSetMesh.cs" />
-    <Compile Include="Components\Cmpt_MinMaxValues.cs" />
-    <Compile Include="Components\Cmpt_MeshBrep.cs" />
-    <Compile Include="Components\Cmpt_Model3DHygro.cs" />
-    <Compile Include="Components\Cmpt_Model3D.cs" />
-    <Compile Include="Components\Cmpt_Model1DOld.cs" />
-    <Compile Include="Components\Cmpt_SimpleLogOrientations.cs" />
-    <Compile Include="Components\Cmpt_MeshCreases.cs" />
-    <Compile Include="Components\Results\Cmpt_Strain.cs" />
-    <Compile Include="Components\Results\Cmpt_Stress.cs" />
-    <Compile Include="Components\Cmpt_GetNodesAndElements.cs" />
-    <Compile Include="Components\Cmpt_ElementMeshes.cs" />
-    <Compile Include="Components\Cmpt_VisualizationFaces.cs" />
-    <Compile Include="Components\Results\Cmpt_Deformations.cs" />
-    <Compile Include="Components\Cmpt_RunCCX.cs" />
-    <Compile Include="Components\Cmpt_LoadResults.cs" />
-    <Compile Include="Api.cs" />
-    <Compile Include="FeElement.cs" />
-    <Compile Include="FeSection.cs" />
-    <Compile Include="Goo\GH_FeBoundaryCondition.cs" />
-    <Compile Include="Goo\GH_FeElement.cs" />
-    <Compile Include="Goo\GH_FeLoad.cs" />
-    <Compile Include="Goo\GH_NodeSet.cs" />
-    <Compile Include="Goo\GH_FeSurface.cs" />
-    <Compile Include="Goo\GH_FeSection.cs" />
-    <Compile Include="Gradient.cs" />
-    <Compile Include="HashBucket.cs" />
-    <Compile Include="Model.cs" />
-    <Compile Include="NodeSet.cs" />
-    <Compile Include="Properties\Resources.Designer.cs">
-      <AutoGen>True</AutoGen>
+    <Compile Update="Properties\Resources.Designer.cs">
       <DesignTime>True</DesignTime>
+      <AutoGen>True</AutoGen>
       <DependentUpon>Resources.resx</DependentUpon>
     </Compile>
-    <Compile Include="PropertyMap.cs" />
-    <Compile Include="Utility.cs" />
-    <Compile Include="Mesh.cs" />
-    <Compile Include="Properties\AssemblyInfo.cs" />
-    <Compile Include="Goo\GH_FrdResults.cs" />
-    <Compile Include="Solver.cs" />
-    <Compile Include="Vector.cs" />
-  </ItemGroup>
+  </ItemGroup>  
+
   <ItemGroup>
-    <PackageReference Include="Grasshopper">
-      <Version>7.32.23221.10241</Version>
-    </PackageReference>
-  </ItemGroup>
-  <ItemGroup>
-    <EmbeddedResource Include="Properties\Resources.resx">
+    <EmbeddedResource Update="Properties\Resources.resx">
       <Generator>ResXFileCodeGenerator</Generator>
       <LastGenOutput>Resources.Designer.cs</LastGenOutput>
     </EmbeddedResource>
   </ItemGroup>
-  <ItemGroup>
-    <None Include="Resources\Default-24x24.png" />
-  </ItemGroup>
-  <ItemGroup>
-    <None Include="Resources\Simulate-24x24.png" />
-  </ItemGroup>
-  <ItemGroup>
-    <None Include="Resources\Visualization-24x24.png" />
-  </ItemGroup>
-  <ItemGroup>
-    <None Include="Resources\ElementMesh-24x24.png" />
-  </ItemGroup>
-  <ItemGroup>
-    <None Include="Resources\Strain-24x24.png" />
-  </ItemGroup>
-  <ItemGroup>
-    <None Include="Resources\Stress-24x24.png" />
-  </ItemGroup>
-  <ItemGroup>
-    <None Include="Resources\Orientations-24x24.png" />
-  </ItemGroup>
-  <ItemGroup>
-    <None Include="Resources\FrdResults-24x24.png" />
-  </ItemGroup>
-  <ItemGroup>
-    <None Include="Resources\RunCCX-24x24.png" />
-  </ItemGroup>
-  <ItemGroup>
-    <None Include="Resources\Model2D-24x24.png" />
-  </ItemGroup>
-  <ItemGroup>
-    <None Include="Resources\Model3D-24x24.png" />
-  </ItemGroup>
-  <ItemGroup>
-    <None Include="Resources\ModelHygro-24x24.png" />
-  </ItemGroup>
-  <ItemGroup>
-    <None Include="Resources\Model1D-24x24.png" />
-  </ItemGroup>
-  <ItemGroup>
-    <None Include="Resources\BoudnaryConditionDisplacement2.png" />
-  </ItemGroup>
-  <ItemGroup>
-    <None Include="Resources\BoundaryConditionDisplacement.png" />
-  </ItemGroup>
-  <ItemGroup>
-    <None Include="Resources\BoundaryConditionNew.png" />
-  </ItemGroup>
-  <ItemGroup>
-    <None Include="Resources\BoundaryConditionTemperature.png" />
-  </ItemGroup>
-  <ItemGroup>
-    <None Include="Resources\Deformation.png" />
-  </ItemGroup>
-  <ItemGroup>
-    <None Include="Resources\ElementSetNew.png" />
-  </ItemGroup>
-  <ItemGroup>
-    <None Include="Resources\LoadConcentrated.png" />
-  </ItemGroup>
-  <ItemGroup>
-    <None Include="Resources\LoadDistributed.png" />
-  </ItemGroup>
-  <ItemGroup>
-    <None Include="Resources\LoadGravity.png" />
-  </ItemGroup>
-  <ItemGroup>
-    <None Include="Resources\MeshCrease.png" />
-  </ItemGroup>
-  <ItemGroup>
-    <None Include="Resources\MinMax.png" />
-  </ItemGroup>
-  <ItemGroup>
-    <None Include="Resources\NodeSetMeshProximity.png" />
-  </ItemGroup>
-  <ItemGroup>
-    <None Include="Resources\NodeSetNew.png" />
-  </ItemGroup>
-  <ItemGroup>
-    <None Include="Resources\NodeSetPointProximity.png" />
-  </ItemGroup>
-  <ItemGroup>
-    <None Include="Resources\Displacement.png" />
-  </ItemGroup>
-  <ItemGroup>
-    <None Include="Resources\DeconstructSet.png" />
-  </ItemGroup>
-  <ItemGroup>
-    <None Include="Resources\BeamSection.png" />
-  </ItemGroup>
-  <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
+  
 </Project>

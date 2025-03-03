@@ -102,31 +102,31 @@ namespace CalculiX.GH.Components
         }
 
         int resultsParam = 0, gammaParam = 0, deformationParam = 0;
-        IGH_Param fieldParam = null, componentParam = null;
+        IGH_Param? fieldParam = null, componentParam = null;
         double scale = 1.0; // assuming SI units (meters)
         bool drawMinMax = true, drawMesh = true;
 
         // Display mesh
-        Mesh originalMesh = null, deformedMesh = null;
-        Vector3f[] displacements = null;
+        Mesh? originalMesh = null, deformedMesh = null;
+        Vector3f[]? displacements = null;
         Line[] creasesOriginal, creasesDeformed;
 
         // Results and fields
         bool reload = false;
-        FrdResults results = null;
-        Dictionary<string, Dictionary<string, ResultComponent>> fields = null;
+        FrdResults? results = null;
+        Dictionary<string, Dictionary<string, ResultComponent>>? fields = null;
 
         // Active field and components
-        Dictionary<string, string> activeComponents = null;
+        Dictionary<string, string>? activeComponents = null;
         string activeField = ""; 
 
         // Connected field and component sources
         bool updateValues = false;
-        GH_ValueList fieldValueList = null, componentValueList = null;
+        GH_ValueList? fieldValueList = null, componentValueList = null;
 
         // Colors
-        Gradient visualizationGradient = null;
-        System.Drawing.Color[] visualizationColors = null;
+        Gradient? visualizationGradient = null;
+        System.Drawing.Color[]? visualizationColors = null;
 
         private void UpdateComponentSources()
         {
@@ -439,8 +439,11 @@ namespace CalculiX.GH.Components
             return 1.0 - Math.Pow(1.0 - data, gamma);
         }
 
-        protected void RebuildMesh(FrdResults results)
+        protected void RebuildMesh(FrdResults? results)
         {
+            if (results is null)
+                return;
+
             var comparer = new CompareIntArraySlow();
             //var cellNeighbours = new Dictionary<int[], int>(nTetra, comparer);
 

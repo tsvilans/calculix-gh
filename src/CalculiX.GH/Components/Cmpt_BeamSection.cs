@@ -16,24 +16,10 @@
  * 
  */
 
-
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-
 using Rhino.Geometry;
 
 using Grasshopper.Kernel;
-using System.IO;
-using System.Reflection;
-using System.Xml.Linq;
-using GmshCommon;
-using Grasshopper.Kernel.Data;
-using Grasshopper;
-using static GmshCommon.Gmsh;
-using GH_IO.Serialization;
+
 using Rhino;
 
 namespace CalculiX.GH.Components
