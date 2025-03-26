@@ -46,6 +46,7 @@ namespace CalculiX.GH.Components
         protected override void RegisterInputParams(GH_Component.GH_InputParamManager pManager)
         {
             pManager.AddGenericParameter("Results", "R", "FrdResults object.", GH_ParamAccess.item);
+            pManager.AddIntegerParameter("Step", "S", "StepID.", GH_ParamAccess.item, 1);
             //pManager.AddGenericParameter("Node IDs", "N", "Ids of nodes to query.", GH_ParamAccess.list);
             //pManager[1].Optional = true;
         }
@@ -76,7 +77,18 @@ namespace CalculiX.GH.Components
                 return;
             }
 
-            if (!results.Fields.ContainsKey("STRESS"))
+            int stepId = 1;
+            DA.GetData("Step", ref stepId);
+            if (!results.Fields.ContainsKey(stepId))
+            {
+                AddRuntimeMessage(GH_RuntimeMessageLevel.Warning, $"Step {stepId} not found...");
+                stepId = results.Fields.Keys.Last();
+            }
+
+            var step = results.Fields[stepId];
+            Message = $"Step {stepId}";
+
+            if (!step.ContainsKey("STRESS"))
             {
                 AddRuntimeMessage(GH_RuntimeMessageLevel.Warning, "No stress values found.");
                 return;
@@ -85,12 +97,12 @@ namespace CalculiX.GH.Components
             float[] sxx, syy, szz, sxy, syz, szx;
             float[] sSigned, sMax, sMid, sMin;
 
-            results.Fields["STRESS"].TryGetValue("SXX", out sxx);
-            results.Fields["STRESS"].TryGetValue("SYY", out syy);
-            results.Fields["STRESS"].TryGetValue("SZZ", out szz);
-            results.Fields["STRESS"].TryGetValue("SXY", out sxy);
-            results.Fields["STRESS"].TryGetValue("SYZ", out syz);
-            results.Fields["STRESS"].TryGetValue("SZX", out szx);
+            step["STRESS"].TryGetValue("SXX", out sxx);
+            step["STRESS"].TryGetValue("SYY", out syy);
+            step["STRESS"].TryGetValue("SZZ", out szz);
+            step["STRESS"].TryGetValue("SXY", out sxy);
+            step["STRESS"].TryGetValue("SYZ", out syz);
+            step["STRESS"].TryGetValue("SZX", out szx);
 
             int N = new int[] { sxx.Length, syy.Length, szz.Length, sxy.Length, syz.Length, szx.Length }.Min();
 

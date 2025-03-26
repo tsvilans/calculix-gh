@@ -46,6 +46,7 @@ namespace CalculiX.GH.Components
         protected override void RegisterInputParams(GH_Component.GH_InputParamManager pManager)
         {
             pManager.AddGenericParameter("Results", "R", "FrdResults object.", GH_ParamAccess.item);
+            pManager.AddIntegerParameter("Step", "S", "StepID.", GH_ParamAccess.item, 1);
             //pManager.AddGenericParameter("Node IDs", "N", "Ids of nodes to query.", GH_ParamAccess.list);
             //pManager[1].Optional = true;
 
@@ -78,9 +79,18 @@ namespace CalculiX.GH.Components
                 return;
             }
 
-            //DA.GetDataList("Node IDs", nodeIds);
+            int stepId = 1;
+            DA.GetData("Step", ref stepId);
+            if (!results.Fields.ContainsKey(stepId))
+            {
+                AddRuntimeMessage(GH_RuntimeMessageLevel.Warning, $"Step {stepId} not found...");
+                stepId = results.Fields.Keys.Last();
+            }
 
-            if (!results.Fields.ContainsKey("TOSTRAIN"))
+            var step = results.Fields[stepId];
+            Message = $"Step {stepId}";
+
+            if (!step.ContainsKey("TOSTRAIN"))
             {
                 AddRuntimeMessage(GH_RuntimeMessageLevel.Warning, "No strain values found.");
                 return;
@@ -89,12 +99,12 @@ namespace CalculiX.GH.Components
             float[] exx, eyy, ezz, exy, eyz, ezx;
             float[] eSigned, eMax, eMid, eMin;
 
-            results.Fields["TOSTRAIN"].TryGetValue("EXX", out exx);
-            results.Fields["TOSTRAIN"].TryGetValue("EYY", out eyy);
-            results.Fields["TOSTRAIN"].TryGetValue("EZZ", out ezz);
-            results.Fields["TOSTRAIN"].TryGetValue("EXY", out exy);
-            results.Fields["TOSTRAIN"].TryGetValue("EYZ", out eyz);
-            results.Fields["TOSTRAIN"].TryGetValue("EZX", out ezx);
+            step["TOSTRAIN"].TryGetValue("EXX", out exx);
+            step["TOSTRAIN"].TryGetValue("EYY", out eyy);
+            step["TOSTRAIN"].TryGetValue("EZZ", out ezz);
+            step["TOSTRAIN"].TryGetValue("EXY", out exy);
+            step["TOSTRAIN"].TryGetValue("EYZ", out eyz);
+            step["TOSTRAIN"].TryGetValue("EZX", out ezx);
 
             int N = new int[] { exx.Length, eyy.Length, ezz.Length, exy.Length, eyz.Length, ezx.Length }.Min();
 

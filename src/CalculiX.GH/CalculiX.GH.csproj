@@ -79,6 +79,7 @@
     <Compile Include="Components\Cmpt_MeshCurves.cs" />
     <Compile Include="Components\Cmpt_Model1D.cs" />
     <Compile Include="Components\Cmpt_LogKnotOrientations.cs" />
+    <Compile Include="Components\Cmpt_GetValues.cs" />
     <Compile Include="Components\Cmpt_VisualizeResults.cs" />
     <Compile Include="Components\LoadsBC\Cmpt_TemperatureBC.cs" />
     <Compile Include="Components\LoadsBC\Cmpt_DisplacementBC.cs" />
@@ -118,6 +119,7 @@
     <Compile Include="Goo\GH_FeSection.cs" />
     <Compile Include="Gradient.cs" />
     <Compile Include="HashBucket.cs" />
+    <Compile Include="IO\InpReader.cs" />
     <Compile Include="Model.cs" />
     <Compile Include="NodeSet.cs" />
     <Compile Include="Properties\Resources.Designer.cs">

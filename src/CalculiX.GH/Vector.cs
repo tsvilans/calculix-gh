@@ -10,11 +10,12 @@ namespace CalculiX.GH
 {
     public static partial class Utility
     {
-        public static Vector3d[] GetVectors(FrdResults results, string field, string comp0, string comp1, string comp2)
+        public static Vector3d[] GetVectors(FrdResults results, int stepId, string field, string comp0, string comp1, string comp2)
         {
-            if (!results.Fields.ContainsKey(field)) throw new Exception("Results don't contain " + field + " data.");
+            if (!results.Fields.ContainsKey(stepId)) throw new Exception($"Results don't contain step {stepId}.");
+            if (!results.Fields[stepId].ContainsKey(field)) throw new Exception($"Results don't contain {field} data.");
 
-            var displacements = results.Fields[field];
+            var displacements = results.Fields[stepId][field];
             var dx = displacements[comp0];
             var dy = displacements[comp1];
             var dz = displacements[comp2];

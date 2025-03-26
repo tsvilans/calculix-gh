@@ -202,10 +202,10 @@ namespace CalculiX.GH.Components
             // 10. Add solid section
             model.Sections.Add("section", new SolidSection("section", material.Name, "all", "ori"));
 
-            model.InitialConditions.Add(new InitialTemperature("all", 0));
+            //model.InitialConditions.Add(new InitialTemperature("all", 0));
 
             // 11. Add simulation step
-            var step = new Step(false);
+            var step = new Step(true);
 
             // 12. Add loads
             foreach (var ghload in loads)

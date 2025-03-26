@@ -56,6 +56,14 @@ public class ElementB31 : FeElement
 
         public override GmshType GmshType => GmshType.Line1;
 
+        public ElementB31(int id, int[] indices)
+        {
+            if (indices.Length != 2) throw new Exception("B31 element needs 2 nodes!");
+            Id = id;
+            Indices = new int[2];
+            Array.Copy(indices, Indices, Indices.Length);
+        }
+
         public ElementB31(int id, int a, int b)
         {
             Id = id;
@@ -71,6 +79,14 @@ public class ElementB31 : FeElement
         }
 
         public override GmshType GmshType => GmshType.Line2;
+
+        public ElementB32(int id, int[] indices)
+        {
+            if (indices.Length != 3) throw new Exception("B32 element needs 3 nodes!");
+            Id = id;
+            Indices = new int[3];
+            Array.Copy(indices, Indices, Indices.Length);
+        }
 
         public ElementB32(int id, int a, int b, int c)
         {
@@ -235,7 +251,7 @@ public class ElementB31 : FeElement
     {
         public override string Type
         {
-            get { return "C3D6"; }
+            get { return "C3D15"; }
         }
 
         public override GmshType GmshType => GmshType.Prism2;
@@ -268,7 +284,7 @@ public class ElementB31 : FeElement
     {
         public override string Type
         {
-            get { return "C3D10"; }
+            get { return "C3D4"; }
         }
 
         public override GmshType GmshType => GmshType.Tetrahedron1;

@@ -47,31 +47,12 @@ using Eto.Drawing;
 
 namespace CalculiX.GH.Components
 {
-    internal class ResultComponent
+
+
+    public class Cmpt_GetValues : GH_Component
     {
-        public int MinId, MaxId;
-        public float Min, Max;
-        public float[] Values;
-
-        public ResultComponent(float[] values)
-        {
-            Values = new float[values.Length];
-            Array.Copy(values, Values, Values.Length);
-
-            (float maxValue, int maxValueId) = Values.Select((n, i) => (n, i)).Max();
-            (float minValue, int minValueId) = Values.Select((n, i) => (n, i)).Min();
-            
-            Min = minValue;
-            Max = maxValue;
-            MinId = minValueId;
-            MaxId = maxValueId;
-        }
-    }
-
-    public class Cmpt_VisualizeResults : GH_Component
-    {
-        public Cmpt_VisualizeResults()
-            : base ("Viz Results", "VizR", "Display the results as a mesh with specific field as mesh colors.", Api.ComponentCategory, "Results")
+        public Cmpt_GetValues()
+            : base ("GetValues", "Val", "Get the results of a specific field and component.", Api.ComponentCategory, "Results")
         {
             activeComponents = new Dictionary<string, string>();
             activeField = string.Empty;
@@ -83,34 +64,19 @@ namespace CalculiX.GH.Components
 
 
         protected override System.Drawing.Bitmap Icon => Properties.Resources.Visualization_24x24;
-        public override Guid ComponentGuid => new Guid("7466fcc1-f219-420c-815d-d542e97a1a1c");
+        public override Guid ComponentGuid => new Guid("6681eefe-857a-4a15-82ce-e20b1b9ff335");
         public override GH_Exposure Exposure => GH_Exposure.primary;
         public override BoundingBox ClippingBox
         {
             get {
-                var bb = BoundingBox.Empty;
-                if (originalMesh != null)
-                {
-                    bb.Union(originalMesh.GetBoundingBox(true));
-                }
-                if (deformedMesh != null)
-                {
-                    bb.Union(deformedMesh.GetBoundingBox(true));
-                }
-                return bb;
+
+                return BoundingBox.Empty;
             }
         }
 
-        int resultsParam = 0, gammaParam = 0, deformationParam = 0;
+        int resultsParam = 0;
         IGH_Param fieldParam = null, componentParam = null;
         double scale = 1.0; // assuming SI units (meters)
-        bool drawMinMax = true, drawMesh = true;
-
-        // Display mesh
-        Mesh originalMesh = null, deformedMesh = null;
-        Vector3f[] displacements = null;
-        Line[] creasesOriginal, creasesDeformed;
-        Transform meshTransform = Transform.Identity;
 
         // Step
         int activeStep = 1;
@@ -127,10 +93,6 @@ namespace CalculiX.GH.Components
         // Connected field and component sources
         bool updateValues = false;
         GH_ValueList fieldValueList = null, componentValueList = null;
-
-        // Colors
-        Gradient visualizationGradient = null;
-        System.Drawing.Color[] visualizationColors = null;
 
         private void UpdateComponentSources()
         {
@@ -240,11 +202,14 @@ namespace CalculiX.GH.Components
 
         public override bool Write(GH_IWriter writer)
         {
-            writer.SetString("active_field", activeField);
+            if (activeField != null)
+            {
+                writer.SetString("active_field", activeField);
 
-            string activeComponent = activeComponents.ContainsKey(activeField) ? activeComponents[activeField] : "";
-            writer.SetString("active_component", activeComponent);
+                string activeComponent = activeComponents.ContainsKey(activeField) ? activeComponents[activeField] : "";
+                writer.SetString("active_component", activeComponent);
 
+            }
             return base.Write(writer);
         }
 
@@ -264,40 +229,16 @@ namespace CalculiX.GH.Components
             int stepParamIndex = pManager.AddIntegerParameter("Step", "S", "Step number to display.", GH_ParamAccess.item, 1);
             int fieldParamIndex = pManager.AddTextParameter("Field", "F", "Field to display on mesh.", GH_ParamAccess.item, "STRESS");
             int componentParamIndex = pManager.AddTextParameter("Component", "C", "Component of field to display on mesh.", GH_ParamAccess.item, "SXX");
-            gammaParam = pManager.AddNumberParameter("Gamma", "G", "Gamma value to apply to display colours.", GH_ParamAccess.item, 1.0);
-            deformationParam = pManager.AddNumberParameter("Deformation", "D", "Deformation factor for mesh, where 1.0 is the true deformation and 0 is no deformation.", GH_ParamAccess.item, 1.0);
-            int transformParam = pManager.AddTransformParameter("Transform", "T", "Optional transform to apply to the visualization data.", GH_ParamAccess.item);
-
             fieldParam = pManager[fieldParamIndex];
             componentParam = pManager[componentParamIndex];
 
             fieldParam.Optional = true;
             componentParam.Optional = true;
-            pManager[gammaParam].Optional = true;
-            pManager[deformationParam].Optional = true;
-            pManager[transformParam].Optional = true;
-        }
-
-        protected override void AppendAdditionalComponentMenuItems(System.Windows.Forms.ToolStripDropDown menu)
-        {
-            Menu_AppendItem(menu, "Min/max", ToggleDrawMinMax, true, drawMinMax);
-            Menu_AppendItem(menu, "Mesh", ToggleDrawMesh, true, drawMesh);
-        }
-
-        private void ToggleDrawMinMax(object sender, EventArgs e)
-        {
-            drawMinMax = !drawMinMax;
-            ExpirePreview(true);
-        }
-        private void ToggleDrawMesh(object sender, EventArgs e)
-        {
-            drawMesh = !drawMesh;
-            ExpirePreview(true);
         }
 
         protected override void RegisterOutputParams(GH_Component.GH_OutputParamManager pManager)
         {
-            pManager.AddMeshParameter("Mesh", "M", "Output deformed mesh.", GH_ParamAccess.item);
+            pManager.AddNumberParameter("Values", "V", "Output values.", GH_ParamAccess.item);
         }
 
         protected override void SolveInstance(IGH_DataAccess DA)
@@ -305,60 +246,56 @@ namespace CalculiX.GH.Components
             FrdResults temp_results = null;
             scale = RhinoMath.UnitScale(UnitSystem.Meters, RhinoDoc.ActiveDoc.ModelUnitSystem);
 
-            int stepId = activeStep;
-            DA.GetData("Step", ref stepId);
-            DA.GetData("Transform", ref meshTransform);
-
+            // Get results
             if (!DA.GetData<FrdResults>("Results", ref temp_results))
             {
                 AddRuntimeMessage(GH_RuntimeMessageLevel.Warning, "Failed to parse results.");
                 return;
             }
-            /*
-            if (!results.Fields.ContainsKey(stepId))
-            {
-                if (results.Fields.ContainsKey(activeStep))
-                {
-                    stepId = activeStep;
-                }
-                else
-                {
-                    stepId = results.Fields.Keys.Last();
-                }
-            }
-            */
-            if (!object.ReferenceEquals(temp_results, results) || stepId != activeStep)
+
+            if (!object.ReferenceEquals(temp_results, results))
             {
                 results = temp_results;
                 updateValues = true;
-
-                //GetDisplacements(results);
-                RebuildMesh(results, stepId);
             }
 
             if (results == null) return;
+            if (results.Fields.Count < 1) return;
 
-            double displacementFactor = 1.0;
-            DA.GetData("Deformation", ref displacementFactor);
+            // Get valid step
+            int stepId = -1;
+            DA.GetData("Step", ref stepId);
 
-            if (displacements != null)
+            if (!results.Fields.ContainsKey(stepId))
             {
-                deformedMesh = originalMesh.DuplicateMesh();
-                var N = (int)Math.Min(displacements.Length, deformedMesh.Vertices.Count);
-                for (int i = 0; i < N; ++i)
-                {
-                    var displacementVector = displacements[i];
-                    displacementVector.Transform(meshTransform);
-                    deformedMesh.Vertices[i] = deformedMesh.Vertices[i] + displacementVector * (float)displacementFactor;
-                }
-                creasesDeformed = deformedMesh.ExtractCreases(0.3).ToArray();
+                stepId = results.Fields.Last().Key;
             }
 
-            double gamma = 1.0;
-            DA.GetData("Gamma", ref gamma);
+            if (stepId != activeStep)
+            {
+                updateValues = true;
+            }
+
+            activeStep = stepId;
+
+            // Update values
+            if (updateValues)
+                PopulateFields(results, activeStep);
+
+            // Get valid field
+            if (string.IsNullOrEmpty(activeField) || !results.Fields[activeStep].ContainsKey(activeField))
+            {
+                activeField = results.Fields[activeStep].First().Key;
+            }
 
             // First, handle the UI
-            string temp_field = "", temp_component = "", new_field = activeField, new_component = activeComponents[activeField];
+            string temp_field = "", temp_component = "", new_field = activeField;
+            activeComponents.TryGetValue(activeField, out string new_component);
+
+            if (string.IsNullOrEmpty(new_component))
+            {
+                new_component = results.Fields[activeStep][activeField].First().Key;
+            }
 
             DA.GetData("Field", ref temp_field);
             DA.GetData("Component", ref temp_component);
@@ -400,142 +337,13 @@ namespace CalculiX.GH.Components
                 var values = component.Values;
                 var max = Math.Max(Math.Abs(values.Min()), Math.Abs(values.Max()));
 
-                if ((af == "DISP" && ac == "ALL") || ac == "VONMISES")
-                {
-                    visualizationGradient = new UnsignedGradient(max);
-                    visualizationGradient.Stops = new System.Drawing.Color[]
-                    {
-                    System.Drawing.Color.Blue,
-                    System.Drawing.Color.White,
-                    //System.Drawing.Color.Lime,
-                    //System.Drawing.Color.Yellow,
-                    System.Drawing.Color.Red
-                    };
-                }
-                else if ((af == "ERROR"))
-                {
-                    visualizationGradient = new UnsignedGradient(100.0);
-                    visualizationGradient.Stops = new System.Drawing.Color[]
-                    {
-                    System.Drawing.Color.Blue,
-                    System.Drawing.Color.White,
-                    //System.Drawing.Color.Lime,
-                    //System.Drawing.Color.Yellow,
-                    System.Drawing.Color.Red
-                    };
-                }
-                else
-                {
-                    visualizationGradient = new SignedGradient(-max, max);
-                    visualizationGradient.Stops = new System.Drawing.Color[]
-                    {
-                    System.Drawing.Color.Blue,
-                    System.Drawing.Color.White,
-                    System.Drawing.Color.Red
-                    };
-                }
-
-                visualizationColors = new System.Drawing.Color[values.Length];
-                for (int i = 0; i < values.Length; ++i)
-                {
-                    //visualizationColors[i] = visualizationGradient.GetValue(ApplyGamma(values[i], gamma));
-                    visualizationColors[i] = visualizationGradient.GetValue(values[i]);
-                }
+                DA.SetDataList("Values", component.Values);
             }
-
-            if (deformedMesh != null)
-            {
-                if (visualizationColors != null)
-                {
-                    deformedMesh.VertexColors.Clear();
-                    deformedMesh.VertexColors.AppendColors(visualizationColors);
-                }
-                DA.SetData("Mesh", deformedMesh);
-            }
-
         }
 
-        protected double[] ApplyGamma(double[] data, double gamma)
-        {
-            return data.Select(x => 1.0 - Math.Pow(1.0 - x, gamma)).ToArray();
-        }
-
-        protected double ApplyGamma(double data, double gamma)
-        {
-            return 1.0 - Math.Pow(1.0 - data, gamma);
-        }
-
-        protected void RebuildMesh(FrdResults results, int stepId)
-        {
-            var comparer = new CompareIntArraySlow();
-            //var cellNeighbours = new Dictionary<int[], int>(nTetra, comparer);
-
-            var cellSet = new HashBucket<int[]>(comparer);
-
-            foreach (var element in results.Elements)
-            {
-                foreach (var face in Utility.GetElementVisualizationFaces(element))
-                {
-                    if (face.Length > 0)
-                        cellSet.Add(face);
-                }
-            }
-
-            var faces = cellSet.GetUnique();
-
-            // Get visualization nodes
-            var nodeSet = new HashSet<int>();
-            foreach (var face in faces)
-            {
-                foreach (var f in face)
-                {
-                    nodeSet.Add(f);
-                }
-            }
-
-            // Create visualization node list and remap visualization faces
-            var nodeMap = new Dictionary<int, int>();
-            var originalNodeMap = new Dictionary<int, Point3d>();
-            var vizNodes = new List<int>();
-
-            int counter = 0;
-            int index = 0;
-
-            foreach (var node in results.Nodes)
-            {
-                if (nodeSet.Contains(node.Id))
-                {
-                    nodeMap[node.Id] = counter;
-                    vizNodes.Add(index);
-                    originalNodeMap[node.Id] = new Point3d(node.X, node.Y, node.Z) * scale;
-                    counter++;
-                }
-                index++;
-            }
-
-            var distortedNodeMap = new Dictionary<int, Point3d>();
-
-            originalMesh = Utility.CreateShellMesh(originalNodeMap, faces);
-            originalMesh.Transform(meshTransform);
-
-            creasesOriginal = originalMesh.ExtractCreases(0.3).ToArray();
-
-            PopulateFields(results, stepId, vizNodes);
-
-            originalMesh.UnifyNormals();
-        }
-
-        public void PopulateFields(FrdResults results, int stepId, List<int> indices)
+        public void PopulateFields(FrdResults results, int stepId)
         {
             fields = new Dictionary<string, Dictionary<string, ResultComponent>>();
-
-            if (!results.Fields.ContainsKey(stepId))
-            {
-                stepId = results.Fields.Keys.Last();
-            }
-
-            activeStep = stepId;
-
             var step = results.Fields[stepId];
  
             foreach(var kvp in step)
@@ -609,11 +417,10 @@ namespace CalculiX.GH.Components
             if (fields.ContainsKey("DISP"))
             {
                 var dispField = fields["DISP"];
-                displacements = new Vector3f[results.Nodes.Count];
 
                 if (scale != 1.0)
                 {
-                    for (int i = 0; i < displacements.Length; ++i)
+                    for (int i = 0; i < results.Nodes.Count; ++i)
                     {
                         dispField["D1"].Values[i] = dispField["D1"].Values[i] * (float)scale;
                         dispField["D2"].Values[i] = dispField["D2"].Values[i] * (float)scale;
@@ -621,88 +428,17 @@ namespace CalculiX.GH.Components
                     }
                 }
 
-                float[] all = new float[displacements.Length];
+                float[] all = new float[results.Nodes.Count];
 
-                for (int i = 0; i < displacements.Length; ++i)
+                for (int i = 0; i < results.Nodes.Count; ++i)
                 {
-                    displacements[i] = new Vector3f(dispField["D1"].Values[i], dispField["D2"].Values[i], dispField["D3"].Values[i]);
-                    all[i] = displacements[i].Length;
+                    var dv = new Vector3f(dispField["D1"].Values[i], dispField["D2"].Values[i], dispField["D3"].Values[i]);
+                    all[i] = dv.Length;
                 }
 
                 fields["DISP"].Add("ALL", new ResultComponent(all));
             }
-
-            // Constrain the result values to the visualisation mesh
-            foreach (var fieldKvp in fields)
-            {
-                foreach (var componentKvp in fieldKvp.Value)
-                {
-                    componentKvp.Value.Values = indices.Select(x => componentKvp.Value.Values[x]).ToArray();
-                }
-            }
-
-            displacements = indices.Select(x => displacements[x]).ToArray();
         }
-
-        public override void DrawViewportMeshes(IGH_PreviewArgs args)
-        {
-            if (deformedMesh != null && drawMesh)
-            {
-                //var material = new DisplayMaterial(System.Drawing.Color.White);
-                //args.Display.DrawMeshShaded(deformedMesh, material);
-                args.Display.DrawMeshFalseColors(deformedMesh);
-            }
-
-            if (drawMinMax && fields.ContainsKey(activeField) && fields[activeField].ContainsKey(activeComponents[activeField]))
-            {
-                var res = fields[activeField][activeComponents[activeField]];
-                FrdNode minNode = results.Nodes[res.MinId], maxNode = results.Nodes[res.MaxId];
-                Point3d minPoint = new Point3d(minNode.X, minNode.Y, minNode.Z) * scale;
-                Point3d maxPoint = new Point3d(maxNode.X, maxNode.Y, maxNode.Z) * scale;
-
-                minPoint.Transform(meshTransform);
-                maxPoint.Transform(meshTransform);
-
-                var sminPoint = args.Display.Viewport.WorldToClient(minPoint);
-                var smaxPoint = args.Display.Viewport.WorldToClient(maxPoint);
-
-                ///var tempDepthMode = args.Display.DepthMode;
-                //args.Display.DepthMode = DepthMode.AlwaysInFront;
-
-                args.Display.PushDepthTesting(false);
-                args.Display.DrawPoint(minPoint, PointStyle.Circle, 2, System.Drawing.Color.White);
-                args.Display.DrawPoint(maxPoint, PointStyle.Circle, 2, System.Drawing.Color.White);
-                args.Display.PopDepthTesting();
-
-                if (activeField == "ERROR")
-                {
-                    args.Display.Draw2dText($"Min: {res.Min:0.00}%", System.Drawing.Color.White, new Point2d(sminPoint.X, sminPoint.Y - 16), true, 16);
-                    args.Display.Draw2dText($"Max: {res.Max:0.00}%", System.Drawing.Color.White, new Point2d(smaxPoint.X, smaxPoint.Y + 16), true, 16);
-                }
-                else
-                {
-                    args.Display.Draw2dText($"Min: {res.Min:0.000e+0}", System.Drawing.Color.White, new Point2d(sminPoint.X, sminPoint.Y - 16), true, 16);
-                    args.Display.Draw2dText($"Max: {res.Max:0.000e+0}", System.Drawing.Color.White, new Point2d(smaxPoint.X, smaxPoint.Y + 16), true, 16);
-                }
-                //args.Display.DepthMode = tempDepthMode;
-            }
-
-            /*
-            if(drawFieldAndComponent)
-            {
-                args.Display.Draw2dText($"{activeField}", System.Drawing.Color.White, new Point2d(16, 32), false, 18);
-                args.Display.Draw2dText($"{activeComponents[activeField]}", System.Drawing.Color.White, new Point2d(16, 50), false, 18);
-            }
-            */
-        }
-
-        public override void DrawViewportWires(IGH_PreviewArgs args)
-        {
-            if (creasesOriginal != null)
-                args.Display.DrawLines(creasesOriginal, System.Drawing.Color.White, 1);
-            if (creasesDeformed != null)
-                args.Display.DrawLines(creasesDeformed, System.Drawing.Color.Black, 1);
-        } 
 
         protected override void BeforeSolveInstance()
         {

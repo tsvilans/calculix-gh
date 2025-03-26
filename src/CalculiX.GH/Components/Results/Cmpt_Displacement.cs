@@ -49,6 +49,7 @@ namespace CalculiX.GH.Components
         protected override void RegisterInputParams(GH_Component.GH_InputParamManager pManager)
         {
             pManager.AddGenericParameter("Results", "R", "FrdResults object.", GH_ParamAccess.item);
+            pManager.AddIntegerParameter("Step", "S", "StepID.", GH_ParamAccess.item, 1);
         }
 
         protected override void RegisterOutputParams(GH_Component.GH_OutputParamManager pManager)
@@ -69,17 +70,30 @@ namespace CalculiX.GH.Components
                 return;
             }
 
-            if (!results.Fields.ContainsKey("DISP"))
+            int stepId = 1;
+            DA.GetData("Step", ref stepId);
+            if (!results.Fields.ContainsKey(stepId))
+            {
+                AddRuntimeMessage(GH_RuntimeMessageLevel.Warning, $"Step {stepId} not found...");
+                stepId = results.Fields.Keys.Last();
+            }
+
+            var step = results.Fields[stepId];
+            Message = $"Step {stepId}";
+
+            if (!step.ContainsKey("DISP"))
             {
                 AddRuntimeMessage(GH_RuntimeMessageLevel.Warning, "No displacement values found.");
                 return;
             }
 
+
             float[] d1, d2, d3, all;
 
-            results.Fields["DISP"].TryGetValue("D1", out d1);
-            results.Fields["DISP"].TryGetValue("D2", out d2);
-            results.Fields["DISP"].TryGetValue("D3", out d3);
+
+            step["DISP"].TryGetValue("D1", out d1);
+            step["DISP"].TryGetValue("D2", out d2);
+            step["DISP"].TryGetValue("D3", out d3);
 
             DA.SetDataList("D1", d1.Select(x => new GH_Number(x)));
             DA.SetDataList("D2", d2.Select(x => new GH_Number(x)));

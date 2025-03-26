@@ -311,5 +311,144 @@ namespace CalculiX.GH
                     };
             }
         }
+
+        public static int[][] GetElementVisualizationFaces(int[] tags, int elementType)
+        {
+            var fi = tags;
+            switch (elementType)
+            {
+                case (1): // B31
+                    return new int[][]
+                    {
+                        new int[]{ fi[0], fi[1], fi[2], fi[3]},
+                        new int[]{ fi[4], fi[5], fi[6], fi[7]},
+                        new int[]{ fi[0], fi[4], fi[5], fi[1]},
+                        new int[]{ fi[6], fi[2], fi[3], fi[7]},
+                        new int[]{ fi[0], fi[3], fi[7], fi[4]},
+                        new int[]{ fi[1], fi[5], fi[6], fi[2]},
+                    };
+                case (3): // C3D4
+                    return new int[][]
+                    {
+                        new int[]{ fi[0], fi[1], fi[2]},
+                        new int[]{ fi[1], fi[2], fi[3]},
+                        new int[]{ fi[2], fi[3], fi[0]},
+                        new int[]{ fi[3], fi[0], fi[1]},
+                    };
+                case (4): // B32
+                    return new int[][]
+                    {
+                        // 1
+                        new int[]{ fi[11], fi[0], fi[8]},
+                        new int[]{ fi[8], fi[1], fi[9]},
+                        new int[]{ fi[9], fi[2], fi[10]},
+                        new int[]{ fi[10], fi[3], fi[11]},
+                        new int[]{ fi[9], fi[10], fi[8]}, //new int[]{ fi[9], fi[11], fi[8]},
+                        new int[]{ fi[11], fi[8], fi[10]}, //new int[]{ fi[11], fi[9], fi[10]},
+
+                        // 2
+                        new int[]{ fi[16], fi[4], fi[19]},
+                        new int[]{ fi[19], fi[7], fi[18]},
+                        new int[]{ fi[18], fi[6], fi[17]},
+                        new int[]{ fi[17], fi[5], fi[16]},
+                        new int[]{ fi[18], fi[16], fi[19]},
+                        new int[]{ fi[16], fi[18], fi[17]},
+
+                        // 3
+                        new int[]{ fi[12], fi[0], fi[8]},
+                        new int[]{ fi[8], fi[1], fi[13]},
+                        new int[]{ fi[13], fi[5], fi[16]},
+                        new int[]{ fi[16], fi[4], fi[12]},
+                        new int[]{ fi[16], fi[8], fi[13]},
+                        new int[]{ fi[8], fi[16], fi[12]},
+
+                        // 4
+                        new int[]{ fi[13], fi[1], fi[9]},
+                        new int[]{ fi[9], fi[2], fi[14]},
+                        new int[]{ fi[14], fi[6], fi[17]},
+                        new int[]{ fi[17], fi[5], fi[13]},
+                        new int[]{ fi[17], fi[9], fi[14]},
+                        new int[]{ fi[9], fi[17], fi[13]},
+
+                        // 5
+                        new int[]{ fi[14], fi[2], fi[10]},
+                        new int[]{ fi[10], fi[3], fi[15]},
+                        new int[]{ fi[15], fi[7], fi[18]},
+                        new int[]{ fi[18], fi[6], fi[14]},
+                        new int[]{ fi[18], fi[10], fi[15]},
+                        new int[]{ fi[10], fi[18], fi[14]},
+
+                        // 6
+                        new int[]{ fi[15], fi[3], fi[11]},
+                        new int[]{ fi[11], fi[0], fi[12]},
+                        new int[]{ fi[12], fi[4], fi[19]},
+                        new int[]{ fi[19], fi[7], fi[15]},
+                        new int[]{ fi[19], fi[11], fi[12]},
+                        new int[]{ fi[11], fi[19], fi[15]},
+                    };
+                case (6): // C3D10
+                    return new int[][]
+                    {
+                        new int[]{ fi[0], fi[4], fi[7]},
+                        new int[]{ fi[4], fi[1], fi[8]},
+                        new int[]{ fi[8], fi[3], fi[7]},
+                        new int[]{ fi[7], fi[4], fi[8]},
+
+                        new int[]{ fi[1], fi[5], fi[8]},
+                        new int[]{ fi[5], fi[2], fi[9]},
+                        new int[]{ fi[9], fi[3], fi[8]},
+                        new int[]{ fi[8], fi[5], fi[9]},
+
+                        new int[]{ fi[2], fi[6], fi[9]},
+                        new int[]{ fi[6], fi[0], fi[7]},
+                        new int[]{ fi[7], fi[3], fi[9]},
+                        new int[]{ fi[9], fi[6], fi[7]},
+
+                        new int[]{ fi[4], fi[0], fi[6]},
+                        new int[]{ fi[6], fi[2], fi[5]},
+                        new int[]{ fi[5], fi[1], fi[4]},
+                        new int[]{ fi[4], fi[6], fi[5]},
+                    };
+
+                case (12): // 27-node hex
+                    return new int[][]
+                    {
+                        new int[]{ fi[0], fi[8], fi[20], fi[9] },
+                        new int[] { fi[8], fi[1], fi[11], fi[20] },
+                        new int[] { fi[11], fi[2], fi[13], fi[20] },
+                        new int[] { fi[13], fi[3], fi[9], fi[20] },
+
+                        new int[] { fi[0], fi[10], fi[21], fi[8] },
+                        new int[] { fi[10], fi[4], fi[16], fi[21] },
+                        new int[] { fi[16], fi[5], fi[12], fi[21] },
+                        new int[] { fi[12], fi[1], fi[8], fi[21] },
+
+                        new int[] { fi[4], fi[17], fi[25], fi[16] },
+                        new int[] { fi[17], fi[7], fi[19], fi[25] },
+                        new int[] { fi[19], fi[6], fi[18], fi[25] },
+                        new int[] { fi[18], fi[5], fi[16], fi[25] },
+
+                        new int[] { fi[7], fi[15], fi[24], fi[19] },
+                        new int[] { fi[15], fi[3], fi[13], fi[24] },
+                        new int[] { fi[13], fi[2], fi[14], fi[24] },
+                        new int[] { fi[14], fi[6], fi[19], fi[24] },
+
+                        new int[] { fi[0], fi[9], fi[22], fi[10] },
+                        new int[] { fi[9], fi[3], fi[15], fi[22] },
+                        new int[] { fi[15], fi[7], fi[17], fi[22] },
+                        new int[] { fi[17], fi[4], fi[10], fi[22] },
+
+                        new int[] { fi[12], fi[5], fi[18], fi[23] },
+                        new int[] { fi[18], fi[6], fi[14], fi[23] },
+                        new int[] { fi[14], fi[2], fi[11], fi[23] },
+                        new int[] { fi[11], fi[1], fi[12], fi[23] }
+                    };
+                default:
+                    return new int[][]
+                    {
+                        new int[]{ }
+                    };
+            }
+        }
     }
 }
