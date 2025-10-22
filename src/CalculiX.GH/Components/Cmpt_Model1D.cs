@@ -145,7 +145,8 @@ namespace CalculiX.GH.Components
             var inputPath = "";
             DA.GetData("Output path", ref inputPath);
 
-            string workingDirectory, executingDirectory = Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location);
+            var assemblyLocation = Assembly.GetExecutingAssembly().Location;
+            string workingDirectory, executingDirectory = Path.GetDirectoryName(assemblyLocation);
 
             if (string.IsNullOrEmpty(inputPath))
             {

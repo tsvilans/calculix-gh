@@ -1,7 +1,7 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
-    <TargetFramework>net7.0-windows</TargetFramework>
+    <TargetFramework>net8.0-windows7.0</TargetFramework>
     <UseWPF>true</UseWPF>
     <UseWindowsForms>true</UseWindowsForms>
     <ImplicitUsings>enable</ImplicitUsings>
@@ -43,56 +43,7 @@
   </ItemGroup>
 
   <ItemGroup>
-    <Compile Include="CompareIntArray.cs" />
-    <Compile Include="Components\Cmpt_BeamSection.cs" />
-    <Compile Include="Components\Cmpt_MeshShell.cs" />
-    <Compile Include="Components\Cmpt_MeshCurves.cs" />
-    <Compile Include="Components\Cmpt_Model1D.cs" />
-    <Compile Include="Components\Cmpt_LogKnotOrientations.cs" />
-    <Compile Include="Components\Cmpt_GetValues.cs" />
-    <Compile Include="Components\Cmpt_VisualizeResults.cs" />
-    <Compile Include="Components\LoadsBC\Cmpt_TemperatureBC.cs" />
-    <Compile Include="Components\LoadsBC\Cmpt_DisplacementBC.cs" />
-    <Compile Include="Components\LoadsBC\Cmpt_CreateBC.cs" />
-    <Compile Include="Components\LoadsBC\Cmpt_GLoad.cs" />
-    <Compile Include="Components\Cmpt_Curves2Beams.cs" />
-    <Compile Include="Components\LoadsBC\Cmpt_CLoad.cs" />
-    <Compile Include="Components\Results\Cmpt_Displacement.cs" />
-    <Compile Include="Components\Sets\Cmpt_ElementSetCreate.cs" />
-    <Compile Include="Components\Sets\Cmpt_DeSet.cs" />
-    <Compile Include="Components\Sets\Cmpt_NodeSetCreate.cs" />
-    <Compile Include="Components\Sets\Cmpt_NodeSetPoints.cs" />
-    <Compile Include="Components\Sets\Cmpt_NodeSetMesh.cs" />
-    <Compile Include="Components\Cmpt_MinMaxValues.cs" />
-    <Compile Include="Components\Cmpt_MeshBrep.cs" />
-    <Compile Include="Components\Cmpt_Model3DHygro.cs" />
-    <Compile Include="Components\Cmpt_Model3D.cs" />
-    <Compile Include="Components\Cmpt_Model1DOld.cs" />
-    <Compile Include="Components\Cmpt_SimpleLogOrientations.cs" />
-    <Compile Include="Components\Cmpt_MeshCreases.cs" />
-    <Compile Include="Components\Results\Cmpt_Strain.cs" />
-    <Compile Include="Components\Results\Cmpt_Stress.cs" />
-    <Compile Include="Components\Cmpt_GetNodesAndElements.cs" />
-    <Compile Include="Components\Cmpt_ElementMeshes.cs" />
-    <Compile Include="Components\Cmpt_VisualizationFaces.cs" />
-    <Compile Include="Components\Results\Cmpt_Deformations.cs" />
-    <Compile Include="Components\Cmpt_RunCCX.cs" />
-    <Compile Include="Components\Cmpt_LoadResults.cs" />
-    <Compile Include="Api.cs" />
-    <Compile Include="FeElement.cs" />
-    <Compile Include="FeSection.cs" />
-    <Compile Include="Goo\GH_FeBoundaryCondition.cs" />
-    <Compile Include="Goo\GH_FeElement.cs" />
-    <Compile Include="Goo\GH_FeLoad.cs" />
-    <Compile Include="Goo\GH_NodeSet.cs" />
-    <Compile Include="Goo\GH_FeSurface.cs" />
-    <Compile Include="Goo\GH_FeSection.cs" />
-    <Compile Include="Gradient.cs" />
-    <Compile Include="HashBucket.cs" />
-    <Compile Include="IO\InpReader.cs" />
-    <Compile Include="Model.cs" />
-    <Compile Include="NodeSet.cs" />
-    <Compile Include="Properties\Resources.Designer.cs">
+    <Compile Update="Properties\Resources.Designer.cs">
       <AutoGen>True</AutoGen>
       <DesignTime>True</DesignTime>
       <AutoGen>True</AutoGen>

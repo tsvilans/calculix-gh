@@ -12,7 +12,7 @@ using System.Xml.Linq;
 
 namespace CalculiX
 {
-    public class Surface
+    public class Surface: IWriteable
     {
         public string Name = "Surface";
         public Dictionary<int, List<int>> Elements;
@@ -44,7 +44,7 @@ namespace CalculiX
 
 
     // TODO: Flesh out properly
-    public class SurfaceInteraction
+    public class SurfaceInteraction: IWriteable
     {
         public string Name;
         public SurfaceInteraction(string name)
@@ -62,7 +62,7 @@ namespace CalculiX
         }
     }
 
-    public class ContactPair
+    public class ContactPair: IWriteable
     {
         public string Name;
         public string Interaction;
@@ -83,7 +83,7 @@ namespace CalculiX
         }
     }
 
-    public abstract class MaterialProperty
+    public abstract class MaterialProperty: IWriteable
     {
         public abstract void Write(TextWriter tw);
     }
@@ -388,6 +388,10 @@ namespace CalculiX
         public List<Surface> Surfaces = new List<Surface>();
         public List<SurfaceInteraction> SurfaceInteractions = new List<SurfaceInteraction>();
         public List<ContactPair> ContactPairs = new List<ContactPair>();
+        public Dictionary<string, ReferencePoint> ReferencePoints = new Dictionary<string, ReferencePoint>();
+
+        public List<Constraint> Constraints = new List<Constraint>();
+        //public Dictionary<string, Constraint> Constraints = new Dictionary<string, Constraint>();
 
         public Dictionary<string, Section> Sections = new Dictionary<string, Section>();
         public List<InitialCondition> InitialConditions = new List<InitialCondition>();
@@ -473,9 +477,27 @@ namespace CalculiX
 
                 file.WriteLine("*Node");
 
+                // Track max node ID so we know where we can add new ones
+                int maxNodeId = -1;
                 foreach (var kvp in Nodes)
                 {
                     file.WriteLine("{0}, {1:0.000000}, {2:0.000000}, {3:0.000000}", kvp.Key, kvp.Value.X, kvp.Value.Y, kvp.Value.Z);
+                    maxNodeId = Math.Max(maxNodeId, kvp.Key);
+                }
+
+                maxNodeId += 1;
+
+                // Write reference points
+                foreach (var kvp in ReferencePoints)
+                {
+                    var loc = kvp.Value.Location;
+                    file.WriteLine($"{maxNodeId}, {loc.X:0.000000}, {loc.Y:0.000000}, {loc.Z:0.000000}");
+                    file.WriteLine($"{maxNodeId + 1}, {loc.X:0.000000}, {loc.Y:0.000000}, {loc.Z:0.000000}");
+
+                    kvp.Value.RefNodeId = maxNodeId;
+                    kvp.Value.RotNodeId = maxNodeId + 1;
+
+                    maxNodeId += 2;
                 }
 
                 // Write elements
@@ -663,6 +685,19 @@ namespace CalculiX
                     foreach (var cp in ContactPairs)
                     {
                         cp.Write(file);
+                    }
+                }
+
+                // Write constraints
+                if (Constraints.Count > 0)
+                {
+                    file.WriteLine("**");
+                    file.WriteLine("** Constraints ++++++++++++++++++++++++++++++++++++++");
+                    file.WriteLine("**");
+
+                    foreach (var constraint in Constraints)
+                    {
+                        constraint.Write(file);
                     }
                 }
 

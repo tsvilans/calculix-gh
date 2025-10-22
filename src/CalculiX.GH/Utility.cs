@@ -1,3 +1,5 @@
+using Rhino.Geometry;
+
 namespace CalculiX.GH
 {
     public static partial class Utility

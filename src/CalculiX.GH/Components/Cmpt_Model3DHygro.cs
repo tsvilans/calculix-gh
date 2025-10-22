@@ -17,21 +17,20 @@
  */
 
 
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-
-using Rhino.Geometry;
-
+using Grasshopper.GUI;
 using Grasshopper.Kernel;
-using System.IO;
-using System.Reflection;
 using Grasshopper.Kernel.Data;
 using Grasshopper.Kernel.Types;
 using Grasshopper.Kernel.Types.Transforms;
 using Rhino;
+using Rhino.Geometry;
+using System;
+using System.Collections.Generic;
+using System.IO;
+using System.Linq;
+using System.Reflection;
+using System.Text;
+using System.Threading.Tasks;
 
 namespace CalculiX.GH.Components
 {
@@ -43,7 +42,7 @@ namespace CalculiX.GH.Components
         }
         public override GH_Exposure Exposure => GH_Exposure.primary;
 
-        int nodesParam, elementsParam, orientationsParam, nsetParam, esetParam, loadParam, bcParam;
+        int nodesParam, elementsParam, orientationsParam, nsetParam, esetParam, loadParam, bcParam, refParam, constraintsParam;
 
         string resultsPath = "";
         string[] simulationOutput = null;
@@ -57,9 +56,11 @@ namespace CalculiX.GH.Components
             orientationsParam = pManager.AddPlaneParameter("Element orientations", "EO", "Element orientations as planes.", GH_ParamAccess.tree);
             nsetParam = pManager.AddGenericParameter("Node sets", "NS", "Node sets.", GH_ParamAccess.list);
             esetParam = pManager.AddGenericParameter("Element sets", "ES", "Element sets.", GH_ParamAccess.list);
+            refParam = pManager.AddGenericParameter("Reference points", "RP", "Reference points.", GH_ParamAccess.list);
 
             loadParam = pManager.AddGenericParameter("Loads", "L", "Loads.", GH_ParamAccess.list);
             bcParam = pManager.AddGenericParameter("Boundary conditions", "BC", "Boundary conditions of model.", GH_ParamAccess.list);
+            constraintsParam = pManager.AddGenericParameter("Constraints", "CN", "Constraints.", GH_ParamAccess.list);
 
             var pathParam = pManager.AddTextParameter("Output path", "P", "Optional output path to export the .inp simulation file to.", GH_ParamAccess.item);
 
@@ -68,6 +69,8 @@ namespace CalculiX.GH.Components
             pManager[esetParam].Optional = true;
             pManager[loadParam].Optional = true;
             pManager[bcParam].Optional = true;
+            pManager[refParam].Optional = true;
+            pManager[constraintsParam].Optional = true;
             pManager[pathParam].Optional = true;
 
         }
@@ -101,6 +104,8 @@ namespace CalculiX.GH.Components
             List<GH_FeSet> nodeSets = new List<GH_FeSet>();
             List<GH_FeSet> elementSets = new List<GH_FeSet> ();
             List<GH_FeLoad> loads = new List<GH_FeLoad>();
+            List<GH_FeConstraint> constraints = new List<GH_FeConstraint>();
+            List<GH_FeReferencePoint> refPoints = new List<GH_FeReferencePoint>();
             List<GH_FeBoundaryCondition> bconditions = new List<GH_FeBoundaryCondition>();
 
             DA.GetDataTree(nodesParam, out nodes);
@@ -110,6 +115,8 @@ namespace CalculiX.GH.Components
             DA.GetDataList(esetParam, elementSets);
             DA.GetDataList(loadParam, loads);
             DA.GetDataList(bcParam, bconditions);
+            DA.GetDataList(refParam, refPoints);
+            DA.GetDataList(constraintsParam, constraints);
 
             // 2. Add nodes
 
@@ -133,6 +140,12 @@ namespace CalculiX.GH.Components
                 }
 
                 model.NodeSets[nset.Name].AddRange(nset.Tags);
+            }
+
+            foreach (GH_FeReferencePoint refPoint in refPoints)
+            {
+                if (refPoint != null)
+                    model.ReferencePoints[refPoint.Value.Name] = refPoint.Value;
             }
 
             // 3. Add elements
@@ -203,6 +216,12 @@ namespace CalculiX.GH.Components
             model.Sections.Add("section", new SolidSection("section", material.Name, "all", "ori"));
 
             //model.InitialConditions.Add(new InitialTemperature("all", 0));
+
+            foreach (GH_FeConstraint constraint in constraints)
+            {
+                if (constraint != null)
+                    model.Constraints.Add(constraint.Value);
+            }
 
             // 11. Add simulation step
             var step = new Step(true);
